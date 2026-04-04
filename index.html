@@ -7,9 +7,18 @@
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
-
 <style>
 canvas { position: absolute; }
+
+@keyframes scan {
+    0% { top: 0; }
+    100% { top: 100%; }
+}
+
+.animate-scan {
+    position: absolute;
+    animation: scan 2s linear infinite;
+}
 </style>
 
 <script>
@@ -77,15 +86,21 @@ tailwind.config = {
 
 <div id="status" class="text-sm mb-2">Status: Idle</div>
 
-<div class="relative w-[640px] h-[480px]">
-<video id="video" width="640" height="480" autoplay muted></video>
+<div class="relative w-[640px] h-[480px] border-4 border-gray-800 rounded overflow-hidden">
+
+    <!-- VIDEO -->
+    <video id="video" width="640" height="480" autoplay muted></video>
+
+    <!-- SCAN LINE ANIMATION -->
+    <div class="absolute w-full h-1 bg-green-500 opacity-70 animate-scan"></div>
+
 </div>
 </div>
 
 <!-- STUDENTS -->
 <div id="students" class="hidden">
 <h2 class="text-xl font-bold mb-4">Student Database</h2>
-<ul><li>Ajay</li><li>Tejas</li></ul>
+<ul><li>Ajay</li><li>Tejas</li></ul><ul><li>priyanshu</li></ul>
 </div>
 
 <!-- EXPORT -->
@@ -98,10 +113,6 @@ tailwind.config = {
 </div>
 
 <script>
-function login(){
-    document.getElementById("loginPage").style.display="none";
-    document.getElementById("app").classList.remove("hidden");
-}
 
 function showSection(id){
     ["dashboard","scanner","students","export"].forEach(sec=>{
@@ -198,16 +209,20 @@ function stopCamera(){
 function captureNow(){
     document.getElementById("status").innerText="Captured";
 }
-
 function markAttendance(name){
     if(!attendance.has(name)){
         attendance.add(name);
 
-        const log=document.createElement("div");
-        log.innerText=`${name} marked at ${new Date().toLocaleTimeString()}`;
-        document.getElementById("logs").prepend(log);
+        const log = document.createElement("div");
+        log.className = "flex justify-between items-center p-2 border-b";
 
-        document.getElementById("presentCount").innerText=attendance.size;
+        log.innerHTML = `
+            <span class="font-semibold">${name}</span>
+            <span class="text-sm text-gray-500">${new Date().toLocaleTimeString()}</span>
+        `;
+
+        document.getElementById("logs").prepend(log);
+        document.getElementById("presentCount").innerText = attendance.size;
     }
 }
 
