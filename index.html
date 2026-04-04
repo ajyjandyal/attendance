@@ -6,7 +6,6 @@
 <title>Smart Attend</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <script>
 tailwind.config = {
@@ -14,7 +13,6 @@ tailwind.config = {
         extend: {
             colors: {
                 primary: '#003366',
-                secondary: '#bf0000',
             }
         }
     }
@@ -22,7 +20,7 @@ tailwind.config = {
 </script>
 </head>
 
-<body class="bg-gray-50 text-gray-800">
+<body class="bg-gray-50">
 
 <div class="flex h-screen">
 
@@ -31,90 +29,108 @@ tailwind.config = {
     <div class="p-5 text-lg font-bold">SMART ATTEND</div>
 
     <nav class="flex-1 px-4 space-y-2">
-        <a class="block px-4 py-2 bg-blue-800 rounded">Dashboard</a>
-        <a class="block px-4 py-2 hover:bg-blue-800 rounded">Live Scanner</a>
-        <a class="block px-4 py-2 hover:bg-blue-800 rounded">Student Database</a>
-        <a class="block px-4 py-2 hover:bg-blue-800 rounded">Export Logs</a>
+        <button onclick="showSection('dashboard')" class="w-full text-left px-4 py-2 bg-blue-800 rounded">Dashboard</button>
+        <button onclick="showSection('scanner')" class="w-full text-left px-4 py-2 hover:bg-blue-800 rounded">Live Scanner</button>
+        <button onclick="showSection('students')" class="w-full text-left px-4 py-2 hover:bg-blue-800 rounded">Student Database</button>
+        <button onclick="showSection('export')" class="w-full text-left px-4 py-2 hover:bg-blue-800 rounded">Export Logs</button>
     </nav>
 </aside>
 
 <!-- MAIN -->
 <main class="flex-1 p-6 overflow-y-auto">
 
-<h1 class="text-2xl font-bold mb-6">Overview</h1>
+<!-- DASHBOARD -->
+<div id="dashboard">
+    <h1 class="text-2xl font-bold mb-6">Overview</h1>
 
-<!-- STATS -->
-<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+    <div class="grid grid-cols-4 gap-6 mb-6">
+        <div class="bg-white p-4 rounded shadow">
+            <p>Total Students</p>
+            <h2 class="text-2xl font-bold">120</h2>
+        </div>
 
-<div class="bg-white p-4 rounded shadow">
-    <p class="text-gray-500">Total Students</p>
-    <h2 class="text-2xl font-bold">120</h2>
+        <div class="bg-white p-4 rounded shadow">
+            <p>Present Today</p>
+            <h2 class="text-2xl font-bold text-green-600">105</h2>
+        </div>
+
+        <div class="bg-white p-4 rounded shadow">
+            <p>Absent</p>
+            <h2 class="text-2xl font-bold text-red-600">15</h2>
+        </div>
+
+        <div class="bg-white p-4 rounded shadow">
+            <p>Avg Confidence</p>
+            <h2 class="text-2xl font-bold text-blue-600">96.8%</h2>
+        </div>
+    </div>
 </div>
 
-<div class="bg-white p-4 rounded shadow">
-    <p class="text-gray-500">Present Today</p>
-    <h2 class="text-2xl font-bold text-green-600">105</h2>
+<!-- SCANNER -->
+<div id="scanner" class="hidden">
+    <h2 class="text-xl font-bold mb-4">Live Scanner</h2>
+
+    <div class="bg-black h-[400px] rounded relative overflow-hidden">
+        <video id="video" autoplay playsinline class="w-full h-full hidden"></video>
+        <div id="placeholder" class="absolute inset-0 flex items-center justify-center text-gray-400">
+            Camera is OFF
+        </div>
+    </div>
+
+    <div class="mt-4 flex gap-4">
+        <button onclick="startCamera()" class="px-4 py-2 bg-primary text-white rounded">Start</button>
+        <button onclick="stopCamera()" class="px-4 py-2 bg-red-600 text-white rounded">Stop</button>
+    </div>
 </div>
 
-<div class="bg-white p-4 rounded shadow">
-    <p class="text-gray-500">Absent</p>
-    <h2 class="text-2xl font-bold text-red-600">15</h2>
+<!-- STUDENTS -->
+<div id="students" class="hidden">
+    <h2 class="text-xl font-bold mb-4">Student Database</h2>
+
+    <div class="bg-white p-4 rounded shadow">
+        <ul class="space-y-2">
+            <li>Ajay Jandyal</li>
+            <li>Tejas Dharashivkar</li>
+            <li>Priyanshu Rai</li>
+        </ul>
+    </div>
 </div>
 
-<div class="bg-white p-4 rounded shadow">
-    <p class="text-gray-500">Avg Confidence</p>
-    <h2 class="text-2xl font-bold text-blue-600">96.8%</h2>
-</div>
+<!-- EXPORT -->
+<div id="export" class="hidden">
+    <h2 class="text-xl font-bold mb-4">Export Logs</h2>
 
-</div>
-
-<!-- CAMERA -->
-<div class="bg-white p-6 rounded shadow">
-
-<h2 class="font-bold mb-4">Live Camera Feed</h2>
-
-<div class="w-full h-[400px] bg-black rounded relative overflow-hidden">
-
-<video id="video" autoplay playsinline class="w-full h-full object-cover hidden"></video>
-
-<div id="placeholder" class="absolute inset-0 flex items-center justify-center text-gray-400">
-    Camera is OFF
-</div>
-
-</div>
-
-<div class="mt-4 flex gap-4">
-    <button onclick="startCamera()" class="px-4 py-2 bg-primary text-white rounded">
-        Start Scanner
+    <button onclick="exportData()" class="px-4 py-2 bg-green-600 text-white rounded">
+        Download CSV
     </button>
-
-    <button onclick="stopCamera()" class="px-4 py-2 bg-red-600 text-white rounded">
-        Stop
-    </button>
-</div>
-
 </div>
 
 </main>
 </div>
 
 <script>
+// NAVIGATION
+function showSection(section) {
+    document.getElementById("dashboard").classList.add("hidden");
+    document.getElementById("scanner").classList.add("hidden");
+    document.getElementById("students").classList.add("hidden");
+    document.getElementById("export").classList.add("hidden");
+
+    document.getElementById(section).classList.remove("hidden");
+}
+
+// CAMERA
 let stream;
 
 async function startCamera() {
-    try {
-        const video = document.getElementById("video");
-        const placeholder = document.getElementById("placeholder");
+    const video = document.getElementById("video");
+    const placeholder = document.getElementById("placeholder");
 
-        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    stream = await navigator.mediaDevices.getUserMedia({ video: true });
 
-        video.srcObject = stream;
-        video.classList.remove("hidden");
-        placeholder.style.display = "none";
-
-    } catch (err) {
-        alert("Allow camera access!");
-    }
+    video.srcObject = stream;
+    video.classList.remove("hidden");
+    placeholder.style.display = "none";
 }
 
 function stopCamera() {
@@ -124,6 +140,17 @@ function stopCamera() {
 
     document.getElementById("video").classList.add("hidden");
     document.getElementById("placeholder").style.display = "flex";
+}
+
+// EXPORT CSV
+function exportData() {
+    const data = "Name,Time\nAjay,09:15\nTejas,09:12";
+    const blob = new Blob([data], { type: 'text/csv' });
+
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "attendance.csv";
+    a.click();
 }
 </script>
 
