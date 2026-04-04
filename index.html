@@ -32,12 +32,85 @@
                 <span class="text-lg font-bold tracking-wider">SMART ATTEND</span>
             </div>
             
-            <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-                <a href="#" class="flex items-center px-4 py-3 bg-blue-800/50 text-white rounded-lg border-l-4 border-secondary">
-                    <i class="fa-solid fa-chart-pie w-5 text-blue-300"></i>
+          <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+    <a href="javascript:void(0)" onclick="showView('dashboard')" id="nav-dashboard" class="nav-item flex items-center px-4 py-3 bg-blue-800/50 text-white rounded-lg border-l-4 border-secondary">
+        <i class="fa-solid fa-chart-pie w-5"></i>
+        <span class="ml-3 font-medium">Dashboard</span>
+    </a>
+    <a href="javascript:void(0)" onclick="showView('database')" id="nav-database" class="nav-item flex items-center px-4 py-3 text-gray-300 hover:bg-blue-800/50 hover:text-white rounded-lg transition-colors">
+        <i class="fa-solid fa-users w-5"></i>
+        <span class="ml-3 font-medium">Student Database</span>
+    </a>
+</nav>
+
+<div id="view-database" class="hidden">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-800">Student Database</h2>
+        <button class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors">
+            <i class="fa-solid fa-user-plus mr-2"></i> Add New Student
+        </button>
+    </div>
+
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex flex-col md:flex-row gap-4">
+        <div class="relative flex-1">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            <input type="text" placeholder="Search by name or PRN..." class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20">
+        </div>
+        <select class="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none text-gray-600">
+            <option>All Departments</option>
+            <option>Cloud Computing</option>
+            <option>AI & ML</option>
+        </select>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <table class="w-full text-left border-collapse">
+            <thead class="bg-gray-50 border-b border-gray-100">
+                <tr>
+                    <th class="px-6 py-4 text-sm font-semibold text-gray-600">Student</th>
+                    <th class="px-6 py-4 text-sm font-semibold text-gray-600">PRN</th>
+                    <th class="px-6 py-4 text-sm font-semibold text-gray-600">Department</th>
+                    <th class="px-6 py-4 text-sm font-semibold text-gray-600">Status</th>
+                    <th class="px-6 py-4 text-sm font-semibold text-gray-600 text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-4 flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-blue-100 text-primary flex items-center justify-center font-bold text-xs">AJ</div>
+                        <span class="font-medium">Ajay Jandyal</span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-600">1132231238</td>
+                    <td class="px-6 py-4 text-sm text-gray-600">Cloud Computing</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">Active</span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <button class="text-gray-400 hover:text-primary mr-3"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button class="text-gray-400 hover:text-secondary"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-4 flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-blue-100 text-primary flex items-center justify-center font-bold text-xs">TD</div>
+                        <span class="font-medium">Tejas Dharashivkar</span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-600">1132230801</td>
+                    <td class="px-6 py-4 text-sm text-gray-600">Cloud Computing</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">Active</span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <button class="text-gray-400 hover:text-primary mr-3"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button class="text-gray-400 hover:text-secondary"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
                     <span class="ml-3 font-medium">Dashboard</span>
                 </a>
-                </nav>
         </aside>
 
         <main class="flex-1 flex flex-col overflow-hidden relative">
@@ -87,6 +160,28 @@
     </div>
 
 <script>
+    function showView(viewName) {
+    // 1. Toggle the Views
+    document.getElementById('view-dashboard').classList.add('hidden');
+    document.getElementById('view-database').classList.add('hidden');
+    document.getElementById('view-' + viewName).classList.remove('hidden');
+
+    // 2. Update Sidebar Active Styles
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+        item.classList.remove('bg-blue-800/50', 'text-white', 'border-l-4', 'border-secondary');
+        item.classList.add('text-gray-300');
+    });
+
+    const activeItem = document.getElementById('nav-' + viewName);
+    activeItem.classList.add('bg-blue-800/50', 'text-white', 'border-l-4', 'border-secondary');
+    activeItem.classList.remove('text-gray-300');
+
+    // 3. Close sidebar on mobile after clicking
+    if (window.innerWidth < 1024) {
+        toggleSidebar();
+    }
+}
 // 1. CLOCK LOGIC
 function updateTime() {
     const now = new Date();
