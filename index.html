@@ -31,6 +31,14 @@
                 <i class="fa-solid fa-expand text-xl mr-3 text-blue-300"></i>
                 <span class="text-lg font-bold tracking-wider">SMART ATTEND</span>
             </div>
+            <div class="w-full h-[400px] bg-gray-900 rounded-lg relative overflow-hidden flex items-center justify-center border-4 border-gray-800">
+    <img id="videoFeed" class="w-full h-full object-cover hidden" src="">
+    
+    <div id="offlineState" class="flex flex-col items-center">
+        <i class="fa-solid fa-video-slash text-gray-600 text-5xl mb-4"></i>
+        <p class="text-gray-400 font-medium">Scanner is Offline</p>
+    </div>
+</div>
             
             <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
                 <a href="#" class="flex items-center px-4 py-3 bg-blue-800/50 text-white rounded-lg group transition-colors border-l-4 border-secondary">
@@ -234,6 +242,25 @@
     </div>
 
     <script>
+        const videoFeed = document.getElementById('videoFeed');
+const offlineState = document.getElementById('offlineState');
+
+function startScanner() {
+    // Points to your Python Flask route
+    videoFeed.src = "http://127.0.0.1:5000/video_feed"; 
+    videoFeed.classList.remove('hidden');
+    offlineState.classList.add('hidden');
+}
+
+function stopScanner() {
+    videoFeed.src = ""; // Stops the request
+    videoFeed.classList.add('hidden');
+    offlineState.classList.remove('hidden');
+}
+
+// Attach to your buttons
+document.getElementById('startBtn').addEventListener('click', startScanner);
+document.getElementById('stopBtn').addEventListener('click', stopScanner);
         function updateTime() {
             const now = new Date();
             document.getElementById('currentTime').innerText = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
@@ -254,6 +281,10 @@ function toggleScanner(isOn) {
         videoImg.classList.add('hidden');
         placeholder.classList.remove('hidden');
     }
+}
+        function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('-translate-x-full');
 }
     </script>
 </body>
