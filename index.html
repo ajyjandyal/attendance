@@ -10,17 +10,43 @@
 <style>
 canvas { position: absolute; }
 
+/* SCAN LINE */
+.scan-line {
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    background: lime;
+    animation: scan 2s linear infinite;
+}
+
 @keyframes scan {
     0% { top: 0; }
     100% { top: 100%; }
 }
 
-.animate-scan {
+/* CORNERS */
+.corner {
     position: absolute;
-    animation: scan 2s linear infinite;
+    width: 25px;
+    height: 25px;
+    border: 3px solid lime;
+}
+
+.top-left { top: 10px; left: 10px; border-right: none; border-bottom: none; }
+.top-right { top: 10px; right: 10px; border-left: none; border-bottom: none; }
+.bottom-left { bottom: 10px; left: 10px; border-right: none; border-top: none; }
+.bottom-right { bottom: 10px; right: 10px; border-left: none; border-top: none; }
+
+/* SUCCESS FLASH */
+.flash {
+    animation: flash 0.3s;
+}
+
+@keyframes flash {
+    0% { background: rgba(0,255,0,0.4); }
+    100% { background: transparent; }
 }
 </style>
-
 <script>
 tailwind.config = {
     theme: {
@@ -78,15 +104,29 @@ tailwind.config = {
 <div id="scanner" class="hidden">
 <h2 class="text-xl font-bold mb-4">AI Scanner</h2>
 
-<div class="flex gap-4 mb-3">
-    <button onclick="startCamera()" class="bg-green-600 text-white px-4 py-2 rounded">Start</button>
-    <button onclick="stopCamera()" class="bg-red-600 text-white px-4 py-2 rounded">Stop</button>
-    <button onclick="captureNow()" class="bg-blue-600 text-white px-4 py-2 rounded">Capture</button>
+<div class="flex gap-3 mb-3">
+    <button onclick="startCamera()" class="bg-green-600 text-white px-4 py-2 rounded shadow">Start</button>
+    <button onclick="stopCamera()" class="bg-red-600 text-white px-4 py-2 rounded shadow">Stop</button>
+    <button onclick="captureNow()" class="bg-blue-600 text-white px-4 py-2 rounded shadow">Capture</button>
 </div>
 
-<div id="status" class="text-sm mb-2">Status: Idle</div>
+<div id="status" class="text-sm mb-2 text-gray-600">Status: Idle</div>
 
-<div class="relative w-[640px] h-[480px] border-4 border-gray-800 rounded overflow-hidden">
+<div class="relative w-[640px] h-[480px] rounded overflow-hidden border-4 border-gray-800 bg-black">
+
+    <video id="video" width="640" height="480" autoplay muted></video>
+
+    <!-- SCAN LINE -->
+    <div class="scan-line"></div>
+
+    <!-- CORNERS -->
+    <div class="corner top-left"></div>
+    <div class="corner top-right"></div>
+    <div class="corner bottom-left"></div>
+    <div class="corner bottom-right"></div>
+
+</div>
+</div>
 
     <!-- VIDEO -->
     <video id="video" width="640" height="480" autoplay muted></video>
@@ -213,6 +253,11 @@ function markAttendance(name){
     if(!attendance.has(name)){
         attendance.add(name);
 
+        playBeep();
+
+        document.querySelector('.relative').classList.add("flash");
+        setTimeout(()=>document.querySelector('.relative').classList.remove("flash"),300);
+
         const log = document.createElement("div");
         log.className = "flex justify-between items-center p-2 border-b";
 
@@ -231,6 +276,10 @@ function exportData(){
     attendance.forEach(name=>{
         data+=name+","+new Date().toLocaleTimeString()+"\n";
     });
+    function playBeep(){
+    const audio = new Audio("https://www.soundjay.com/buttons/sounds/button-3.mp3");
+    audio.play();
+}
 
     const blob=new Blob([data],{type:"text/csv"});
     const a=document.createElement("a");
