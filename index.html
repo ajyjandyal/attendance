@@ -7,7 +7,6 @@
 
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.tailwindcss.com"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
 <script defer src="script.js"></script>
 
 </head>
@@ -20,7 +19,7 @@
 <aside class="w-64 bg-blue-900 text-white flex flex-col">
     <div class="p-5 font-bold text-lg">SMART ATTEND</div>
 
-    <nav class="px-4 space-y-2">
+    <nav class="px-4 space-y-2 mt-4">
         <button onclick="showSection('dashboard')" class="nav-btn active">Dashboard</button>
         <button onclick="showSection('scanner')" class="nav-btn">Live Scanner</button>
         <button onclick="showSection('students')" class="nav-btn">Student Database</button>
@@ -39,7 +38,7 @@
 <div class="card"><p>Total Students</p><h2>120</h2></div>
 <div class="card"><p>Present Today</p><h2 id="presentCount">0</h2></div>
 <div class="card"><p>Absent</p><h2>15</h2></div>
-<div class="card"><p>Confidence</p><h2>96.8%</h2></div>
+<div class="card"><p>Confidence</p><h2>--</h2></div>
 </div>
 
 <div class="card">
@@ -50,7 +49,7 @@
 
 <!-- SCANNER -->
 <div id="scanner" class="hidden">
-<h2 class="text-xl font-bold mb-4">AI Scanner</h2>
+<h2 class="text-xl font-bold mb-4">Live Scanner</h2>
 
 <div class="flex gap-3 mb-3">
 <button onclick="startCamera()" class="btn green">Start</button>
@@ -61,8 +60,8 @@
 <div id="status">Status: Idle</div>
 
 <div class="camera-box">
-<video id="video" autoplay muted></video>
-<div class="scan-line"></div>
+    <video id="video" autoplay muted playsinline></video>
+    <div class="scan-line"></div>
 </div>
 </div>
 
