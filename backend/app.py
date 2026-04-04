@@ -1,59 +1,76 @@
-from flask import Flask, Response
-import cv2
-import face_recognition
-import numpy as np
-import os
+from flask import Flask, request, jsonify
+import sqlite3
 
 app = Flask(__name__)
 
-video_capture = cv2.VideoCapture(0)
+# DB INIT
+def init_db():
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
 
-known_face_encodings = []
-known_face_names = []
+    c.execute('''CREATE TABLE IF NOT EXISTS users(
+        id INTEGER PRIMARY KEY,
+        username TEXT,
+        password TEXT
+    )''')
 
-# Load known faces
-for file in os.listdir("known_faces"):
-    image = face_recognition.load_image_file(f"known_faces/{file}")
-    encodings = face_recognition.face_encodings(image)
-    
-    if len(encodings) > 0:
-        known_face_encodings.append(encodings[0])
-        known_face_names.append(file.split(".")[0])
+    c.execute('''CREATE TABLE IF NOT EXISTS attendance(
+        id INTEGER PRIMARY KEY,
+        name TEXT,
+        time TEXT
+    )''')
 
-def generate_frames():
-    while True:
-        success, frame = video_capture.read()
-        if not success:
-            break
+    conn.commit()
+    conn.close()
 
-        rgb_frame = frame[:, :, ::-1]
+init_db()
 
-        face_locations = face_recognition.face_locations(rgb_frame)
-        face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
+# LOGIN
+@app.route("/login", methods=["POST"])
+def login():
+    data = request.json
+    username = data["username"]
+    password = data["password"]
 
-        for (top, right, bottom, left), face_encoding in zip(face_locations, face_encodings):
-            matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
-            name = "Unknown"
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
 
-            if True in matches:
-                match_index = matches.index(True)
-                name = known_face_names[match_index]
+    c.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
+    user = c.fetchone()
 
-            # Draw box
-            cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
-            cv2.putText(frame, name, (left, top - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+    conn.close()
 
-        ret, buffer = cv2.imencode('.jpg', frame)
-        frame = buffer.tobytes()
+    if user:
+        return jsonify({"status": "success"})
+    else:
+        return jsonify({"status": "fail"})
 
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+# SAVE ATTENDANCE
+@app.route("/attendance", methods=["POST"])
+def attendance():
+    data = request.json
+    name = data["name"]
+    time = data["time"]
 
-@app.route('/video')
-def video():
-    return Response(generate_frames(),
-                    mimetype='multipart/x-mixed-replace; boundary=frame')
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
 
-if __name__ == "__main__":
-    app.run(debug=True)
+    c.execute("INSERT INTO attendance(name,time) VALUES (?,?)", (name, time))
+    conn.commit()
+    conn.close()
+
+    return jsonify({"status": "saved"})
+
+# GET ATTENDANCE
+@app.route("/logs")
+def logs():
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+
+    c.execute("SELECT * FROM attendance")
+    rows = c.fetchall()
+
+    conn.close()
+    return jsonify(rows)
+
+app.run(debug=True)
