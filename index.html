@@ -1,41 +1,93 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Attend - Live Scanner</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Attend</title>
+
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+<script defer src="script.js"></script>
+
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
 
-    <div class="bg-white p-8 rounded-xl shadow-lg max-w-2xl w-full text-center">
-        <h1 class="text-3xl font-bold text-blue-900 mb-6">Student Registration Camera</h1>
-        
-        <div class="video-container relative bg-black rounded-lg overflow-hidden border-4 border-gray-800 mb-6 flex justify-center">
-            <video id="videoElement" autoplay playsinline class="w-full max-w-lg"></video>
-            
-            <div id="scanOverlay" class="hidden absolute inset-0 border-2 border-green-500/50 m-4 rounded">
-                <div class="scan-line"></div>
-            </div>
-        </div>
+<body class="bg-gray-50">
 
-        <canvas id="canvasElement" class="hidden"></canvas>
-
-        <div class="flex justify-center gap-4">
-            <button id="startBtn" class="px-6 py-3 bg-green-600 text-white rounded font-bold hover:bg-green-700 transition-colors">
-                1. Start Camera
-            </button>
-            <button id="captureBtn" class="px-6 py-3 bg-blue-600 text-white rounded font-bold hover:bg-blue-700 transition-colors hidden">
-                2. Capture & Save
-            </button>
-        </div>
-
-        <p id="statusMessage" class="mt-4 text-gray-600 font-medium">System Ready</p>
+<!-- LOGIN -->
+<div id="loginPage" class="flex items-center justify-center h-screen">
+    <div class="bg-white p-6 rounded shadow w-80">
+        <h2 class="text-xl mb-4">Login</h2>
+        <input id="username" placeholder="Username" class="border p-2 w-full mb-2">
+        <input id="password" type="password" placeholder="Password" class="border p-2 w-full mb-2">
+        <button onclick="login()" class="bg-blue-600 text-white w-full py-2">Login</button>
     </div>
+</div>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+<!-- APP -->
+<div id="app" class="hidden flex h-screen">
+
+<aside class="w-64 bg-blue-900 text-white flex flex-col">
+    <div class="p-5 font-bold text-lg">SMART ATTEND</div>
+
+    <nav class="px-4 space-y-2">
+        <button onclick="showSection('dashboard')" class="nav-btn active">Dashboard</button>
+        <button onclick="showSection('scanner')" class="nav-btn">Live Scanner</button>
+        <button onclick="showSection('students')" class="nav-btn">Student Database</button>
+        <button onclick="showSection('export')" class="nav-btn">Export Logs</button>
+    </nav>
+</aside>
+
+<main class="flex-1 p-6 overflow-y-auto">
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+<h1 class="text-2xl font-bold mb-6">Overview</h1>
+
+<div class="grid grid-cols-4 gap-6 mb-6">
+<div class="card"><p>Total Students</p><h2>120</h2></div>
+<div class="card"><p>Present Today</p><h2 id="presentCount">0</h2></div>
+<div class="card"><p>Absent</p><h2>15</h2></div>
+<div class="card"><p>Confidence</p><h2>96.8%</h2></div>
+</div>
+
+<div class="card">
+<h2 class="font-bold mb-2">Recent Logs</h2>
+<div id="logs"></div>
+</div>
+</div>
+
+<!-- SCANNER -->
+<div id="scanner" class="hidden">
+<h2 class="text-xl font-bold mb-4">AI Scanner</h2>
+
+<div class="flex gap-3 mb-3">
+<button onclick="startCamera()" class="btn green">Start</button>
+<button onclick="stopCamera()" class="btn red">Stop</button>
+<button onclick="captureNow()" class="btn blue">Capture</button>
+</div>
+
+<div id="status">Status: Idle</div>
+
+<div class="camera-box">
+<video id="video" autoplay muted></video>
+<div class="scan-line"></div>
+</div>
+</div>
+
+<!-- STUDENTS -->
+<div id="students" class="hidden">
+<h2>Student Database</h2>
+<ul><li>Ajay</li><li>Tejas</li></ul>
+</div>
+
+<!-- EXPORT -->
+<div id="export" class="hidden">
+<button onclick="exportData()" class="btn green">Download CSV</button>
+</div>
+
+</main>
+</div>
+
 </body>
 </html>
