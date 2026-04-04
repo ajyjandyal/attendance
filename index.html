@@ -2,16 +2,28 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Smart Attend AI</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Attend</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
 
 <style>
-canvas {
-    position: absolute;
-}
+canvas { position: absolute; }
 </style>
+
+<script>
+tailwind.config = {
+    theme: {
+        extend: {
+            colors: {
+                primary: '#003366',
+                secondary: '#bf0000'
+            }
+        }
+    }
+}
+</script>
 </head>
 
 <body class="bg-gray-50">
@@ -19,28 +31,92 @@ canvas {
 <div class="flex h-screen">
 
 <!-- SIDEBAR -->
-<aside class="w-64 bg-blue-900 text-white p-4">
-    <h1 class="text-xl font-bold mb-4">SMART ATTEND</h1>
+<aside class="w-64 bg-primary text-white flex flex-col">
+    <div class="p-5 font-bold text-lg">SMART ATTEND</div>
+
+    <nav class="px-4 space-y-2">
+        <button onclick="showSection('dashboard')" class="w-full text-left px-4 py-2 bg-blue-800 rounded">Dashboard</button>
+        <button onclick="showSection('scanner')" class="w-full text-left px-4 py-2 hover:bg-blue-800 rounded">Live Scanner</button>
+        <button onclick="showSection('students')" class="w-full text-left px-4 py-2 hover:bg-blue-800 rounded">Student Database</button>
+        <button onclick="showSection('export')" class="w-full text-left px-4 py-2 hover:bg-blue-800 rounded">Export Logs</button>
+    </nav>
 </aside>
 
 <!-- MAIN -->
-<main class="flex-1 p-6">
+<main class="flex-1 p-6 overflow-y-auto">
 
-<h2 class="text-xl font-bold mb-4">AI Face Recognition</h2>
+<!-- DASHBOARD -->
+<div id="dashboard">
+<h1 class="text-2xl font-bold mb-6">Overview</h1>
 
-<div class="relative w-[640px] h-[480px]">
-    <video id="video" width="640" height="480" autoplay muted></video>
+<div class="grid grid-cols-4 gap-6 mb-6">
+<div class="bg-white p-4 rounded shadow">
+<p>Total Students</p>
+<h2 class="text-2xl font-bold">120</h2>
 </div>
 
-<button onclick="startCamera()" class="mt-4 px-4 py-2 bg-blue-600 text-white">
-    Start Scanner
-</button>
+<div class="bg-white p-4 rounded shadow">
+<p>Present Today</p>
+<h2 class="text-2xl font-bold text-green-600" id="presentCount">0</h2>
+</div>
+
+<div class="bg-white p-4 rounded shadow">
+<p>Absent</p>
+<h2 class="text-2xl font-bold text-red-600">15</h2>
+</div>
+
+<div class="bg-white p-4 rounded shadow">
+<p>Avg Confidence</p>
+<h2 class="text-2xl font-bold text-blue-600">96.8%</h2>
+</div>
+</div>
+
+<!-- LOGS -->
+<div class="bg-white p-4 rounded shadow">
+<h2 class="font-bold mb-4">Recent Logs</h2>
+<div id="logs"></div>
+</div>
+</div>
+
+<!-- SCANNER -->
+<div id="scanner" class="hidden">
+<h2 class="text-xl font-bold mb-4">AI Scanner</h2>
+
+<div class="relative w-[640px] h-[480px]">
+<video id="video" width="640" height="480" autoplay muted></video>
+</div>
+</div>
+
+<!-- STUDENTS -->
+<div id="students" class="hidden">
+<h2 class="text-xl font-bold mb-4">Student Database</h2>
+<ul>
+<li>Ajay</li>
+<li>Tejas</li>
+</ul>
+</div>
+
+<!-- EXPORT -->
+<div id="export" class="hidden">
+<h2 class="text-xl font-bold mb-4">Export Logs</h2>
+<button onclick="exportData()" class="bg-green-600 text-white px-4 py-2">Download CSV</button>
+</div>
 
 </main>
 </div>
 
 <script>
-const labeledDescriptors = [];
+// NAVIGATION
+function showSection(id){
+    ["dashboard","scanner","students","export"].forEach(sec=>{
+        document.getElementById(sec).classList.add("hidden");
+    });
+    document.getElementById(id).classList.remove("hidden");
+}
+
+// AI VARIABLES
+let labeledDescriptors = [];
+let attendance = new Set();
 
 // LOAD MODELS
 Promise.all([
@@ -49,64 +125,88 @@ Promise.all([
     faceapi.nets.faceRecognitionNet.loadFromUri('models'),
 ]).then(loadFaces);
 
-// LOAD KNOWN FACES
-async function loadFaces() {
-    const labels = ["ajay", "tejas"]; // same as image names
+// LOAD FACES
+async function loadFaces(){
+    const labels = ["ajay","tejas"];
 
-    for (let label of labels) {
+    for(let label of labels){
         const img = await faceapi.fetchImage(`faces/${label}.jpg`);
-        const detections = await faceapi.detectSingleFace(img)
+        const detection = await faceapi.detectSingleFace(img)
             .withFaceLandmarks()
             .withFaceDescriptor();
 
         labeledDescriptors.push(
-            new faceapi.LabeledFaceDescriptors(label, [detections.descriptor])
+            new faceapi.LabeledFaceDescriptors(label,[detection.descriptor])
         );
     }
 
     startCamera();
 }
 
-// START CAMERA
-async function startCamera() {
+// CAMERA
+async function startCamera(){
     const video = document.getElementById("video");
 
-    const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+    const stream = await navigator.mediaDevices.getUserMedia({video:{}});
     video.srcObject = stream;
 
-    video.addEventListener('play', () => {
+    video.addEventListener('play', ()=>{
         const canvas = faceapi.createCanvasFromMedia(video);
         document.querySelector('.relative').append(canvas);
 
-        const displaySize = { width: video.width, height: video.height };
-        faceapi.matchDimensions(canvas, displaySize);
+        const size = {width:video.width,height:video.height};
+        faceapi.matchDimensions(canvas,size);
 
-        const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors);
+        const matcher = new faceapi.FaceMatcher(labeledDescriptors);
 
-        setInterval(async () => {
+        setInterval(async ()=>{
             const detections = await faceapi.detectAllFaces(
-                video,
-                new faceapi.TinyFaceDetectorOptions()
+                video,new faceapi.TinyFaceDetectorOptions()
             ).withFaceLandmarks().withFaceDescriptors();
 
-            const resized = faceapi.resizeResults(detections, displaySize);
+            const resized = faceapi.resizeResults(detections,size);
+            canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
 
-            canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+            resized.forEach((d)=>{
+                const result = matcher.findBestMatch(d.descriptor);
+                const box = d.detection.box;
 
-            const results = resized.map(d =>
-                faceMatcher.findBestMatch(d.descriptor)
-            );
+                new faceapi.draw.DrawBox(box,{label:result.toString()}).draw(canvas);
 
-            results.forEach((result, i) => {
-                const box = resized[i].detection.box;
-
-                new faceapi.draw.DrawBox(box, {
-                    label: result.toString()
-                }).draw(canvas);
+                if(result.label !== "unknown"){
+                    markAttendance(result.label);
+                }
             });
 
-        }, 100);
+        },100);
     });
+}
+
+// ATTENDANCE
+function markAttendance(name){
+    if(!attendance.has(name)){
+        attendance.add(name);
+
+        const log = document.createElement("div");
+        log.innerText = `${name} marked present at ${new Date().toLocaleTimeString()}`;
+        document.getElementById("logs").prepend(log);
+
+        document.getElementById("presentCount").innerText = attendance.size;
+    }
+}
+
+// EXPORT
+function exportData(){
+    let data = "Name,Time\n";
+    attendance.forEach(name=>{
+        data += name + "," + new Date().toLocaleTimeString() + "\n";
+    });
+
+    const blob = new Blob([data],{type:"text/csv"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "attendance.csv";
+    a.click();
 }
 </script>
 
