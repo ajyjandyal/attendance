@@ -1,293 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Attend</title>
-
-<script src="https://cdn.tailwindcss.com"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
-<style>
-canvas { position: absolute; }
-
-/* SCAN LINE */
-.scan-line {
-    position: absolute;
-    width: 100%;
-    height: 2px;
-    background: lime;
-    animation: scan 2s linear infinite;
-}
-
-@keyframes scan {
-    0% { top: 0; }
-    100% { top: 100%; }
-}
-
-/* CORNERS */
-.corner {
-    position: absolute;
-    width: 25px;
-    height: 25px;
-    border: 3px solid lime;
-}
-
-.top-left { top: 10px; left: 10px; border-right: none; border-bottom: none; }
-.top-right { top: 10px; right: 10px; border-left: none; border-bottom: none; }
-.bottom-left { bottom: 10px; left: 10px; border-right: none; border-top: none; }
-.bottom-right { bottom: 10px; right: 10px; border-left: none; border-top: none; }
-
-/* SUCCESS FLASH */
-.flash {
-    animation: flash 0.3s;
-}
-
-@keyframes flash {
-    0% { background: rgba(0,255,0,0.4); }
-    100% { background: transparent; }
-}
-</style>
-<script>
-tailwind.config = {
-    theme: {
-        extend: {
-            colors: {
-                primary: '#003366',
-                secondary: '#bf0000'
-            }
-        }
-    }
-}
-</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Attend - Live Scanner</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
 
-<body class="bg-gray-50">
+    <div class="bg-white p-8 rounded-xl shadow-lg max-w-2xl w-full text-center">
+        <h1 class="text-3xl font-bold text-blue-900 mb-6">Student Registration Camera</h1>
+        
+        <div class="video-container relative bg-black rounded-lg overflow-hidden border-4 border-gray-800 mb-6 flex justify-center">
+            <video id="videoElement" autoplay playsinline class="w-full max-w-lg"></video>
+            
+            <div id="scanOverlay" class="hidden absolute inset-0 border-2 border-green-500/50 m-4 rounded">
+                <div class="scan-line"></div>
+            </div>
+        </div>
 
-<!-- LOGIN -->
+        <canvas id="canvasElement" class="hidden"></canvas>
 
-<!-- APP -->
-<div id="app" class="hidden flex h-screen">
+        <div class="flex justify-center gap-4">
+            <button id="startBtn" class="px-6 py-3 bg-green-600 text-white rounded font-bold hover:bg-green-700 transition-colors">
+                1. Start Camera
+            </button>
+            <button id="captureBtn" class="px-6 py-3 bg-blue-600 text-white rounded font-bold hover:bg-blue-700 transition-colors hidden">
+                2. Capture & Save
+            </button>
+        </div>
 
-<!-- SIDEBAR -->
-<aside class="w-64 bg-primary text-white flex flex-col">
-    <div class="p-5 font-bold text-lg">SMART ATTEND</div>
+        <p id="statusMessage" class="mt-4 text-gray-600 font-medium">System Ready</p>
+    </div>
 
-    <nav class="px-4 space-y-2">
-        <button onclick="showSection('dashboard')" class="w-full text-left px-4 py-2 bg-blue-800 rounded">Dashboard</button>
-        <button onclick="showSection('scanner')" class="w-full text-left px-4 py-2 hover:bg-blue-800 rounded">Live Scanner</button>
-        <button onclick="showSection('students')" class="w-full text-left px-4 py-2 hover:bg-blue-800 rounded">Student Database</button>
-        <button onclick="showSection('export')" class="w-full text-left px-4 py-2 hover:bg-blue-800 rounded">Export Logs</button>
-    </nav>
-</aside>
-
-<!-- MAIN -->
-<main class="flex-1 p-6 overflow-y-auto">
-
-<!-- DASHBOARD -->
-<div id="dashboard">
-<h1 class="text-2xl font-bold mb-6">Overview</h1>
-
-<div class="grid grid-cols-4 gap-6 mb-6">
-<div class="bg-white p-4 rounded shadow"><p>Total Students</p><h2>120</h2></div>
-<div class="bg-white p-4 rounded shadow"><p>Present Today</p><h2 id="presentCount">0</h2></div>
-<div class="bg-white p-4 rounded shadow"><p>Absent</p><h2>15</h2></div>
-<div class="bg-white p-4 rounded shadow"><p>Confidence</p><h2>96.8%</h2></div>
-</div>
-
-<div class="bg-white p-4 rounded shadow">
-<h2 class="font-bold mb-2">Recent Logs</h2>
-<div id="logs"></div>
-</div>
-</div>
-
-<!-- SCANNER -->
-<div id="scanner" class="hidden">
-<h2 class="text-xl font-bold mb-4">AI Scanner</h2>
-
-<div class="flex gap-3 mb-3">
-    <button onclick="startCamera()" class="bg-green-600 text-white px-4 py-2 rounded shadow">Start</button>
-    <button onclick="stopCamera()" class="bg-red-600 text-white px-4 py-2 rounded shadow">Stop</button>
-    <button onclick="captureNow()" class="bg-blue-600 text-white px-4 py-2 rounded shadow">Capture</button>
-</div>
-
-<div id="status" class="text-sm mb-2 text-gray-600">Status: Idle</div>
-
-<div class="relative w-[640px] h-[480px] rounded overflow-hidden border-4 border-gray-800 bg-black">
-
-    <video id="video" width="640" height="480" autoplay muted></video>
-
-    <!-- SCAN LINE -->
-    <div class="scan-line"></div>
-
-    <!-- CORNERS -->
-    <div class="corner top-left"></div>
-    <div class="corner top-right"></div>
-    <div class="corner bottom-left"></div>
-    <div class="corner bottom-right"></div>
-
-</div>
-</div>
-
-    <!-- VIDEO -->
-    <video id="video" width="640" height="480" autoplay muted></video>
-
-    <!-- SCAN LINE ANIMATION -->
-    <div class="absolute w-full h-1 bg-green-500 opacity-70 animate-scan"></div>
-
-</div>
-</div>
-
-<!-- STUDENTS -->
-<div id="students" class="hidden">
-<h2 class="text-xl font-bold mb-4">Student Database</h2>
-<ul><li>Ajay</li><li>Tejas</li></ul><ul><li>priyanshu</li></ul>
-</div>
-
-<!-- EXPORT -->
-<div id="export" class="hidden">
-<h2 class="text-xl font-bold mb-4">Export Logs</h2>
-<button onclick="exportData()" class="bg-green-600 text-white px-4 py-2">Download CSV</button>
-</div>
-
-</main>
-</div>
-
-<script>
-
-function showSection(id){
-    ["dashboard","scanner","students","export"].forEach(sec=>{
-        document.getElementById(sec).classList.add("hidden");
-    });
-    document.getElementById(id).classList.remove("hidden");
-}
-
-let labeledDescriptors=[];
-let attendance=new Set();
-let stream=null;
-let running=false;
-
-async function loadModels(){
-    document.getElementById("status").innerText="Loading models...";
-
-    await Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri('/attendance/models'),
-        faceapi.nets.faceLandmark68Net.loadFromUri('/attendance/models'),
-        faceapi.nets.faceRecognitionNet.loadFromUri('/attendance/models'),
-    ]);
-
-    document.getElementById("status").innerText="Models Loaded";
-    await loadFaces();
-}
-
-async function loadFaces(){
-    const labels=["ajay","tejas"];
-
-    for(let label of labels){
-        const img=await faceapi.fetchImage(`faces/${label}.jpg`);
-        const detection=await faceapi.detectSingleFace(img)
-            .withFaceLandmarks()
-            .withFaceDescriptor();
-
-        labeledDescriptors.push(
-            new faceapi.LabeledFaceDescriptors(label,[detection.descriptor])
-        );
-    }
-}
-
-async function startCamera(){
-    await loadModels();
-
-    const video=document.getElementById("video");
-
-    stream=await navigator.mediaDevices.getUserMedia({video:true});
-    video.srcObject=stream;
-
-    running=true;
-    document.getElementById("status").innerText="Camera Running";
-
-    video.onplay=()=>{
-        const canvas=faceapi.createCanvasFromMedia(video);
-        document.querySelector('.relative').append(canvas);
-
-        const size={width:video.width,height:video.height};
-        faceapi.matchDimensions(canvas,size);
-
-        const matcher=new faceapi.FaceMatcher(labeledDescriptors);
-
-        setInterval(async ()=>{
-            if(!running) return;
-
-            const detections=await faceapi.detectAllFaces(
-                video,new faceapi.TinyFaceDetectorOptions()
-            ).withFaceLandmarks().withFaceDescriptors();
-
-            const resized=faceapi.resizeResults(detections,size);
-            canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
-
-            resized.forEach(d=>{
-                const result=matcher.findBestMatch(d.descriptor);
-
-                new faceapi.draw.DrawBox(d.detection.box,{
-                    label:result.toString()
-                }).draw(canvas);
-
-                if(result.label!=="unknown"){
-                    markAttendance(result.label);
-                }
-            });
-
-        },100);
-    };
-}
-
-function stopCamera(){
-    running=false;
-    if(stream) stream.getTracks().forEach(t=>t.stop());
-    document.getElementById("status").innerText="Stopped";
-}
-
-function captureNow(){
-    document.getElementById("status").innerText="Captured";
-}
-function markAttendance(name){
-    if(!attendance.has(name)){
-        attendance.add(name);
-
-        playBeep();
-
-        document.querySelector('.relative').classList.add("flash");
-        setTimeout(()=>document.querySelector('.relative').classList.remove("flash"),300);
-
-        const log = document.createElement("div");
-        log.className = "flex justify-between items-center p-2 border-b";
-
-        log.innerHTML = `
-            <span class="font-semibold">${name}</span>
-            <span class="text-sm text-gray-500">${new Date().toLocaleTimeString()}</span>
-        `;
-
-        document.getElementById("logs").prepend(log);
-        document.getElementById("presentCount").innerText = attendance.size;
-    }
-}
-
-function exportData(){
-    let data="Name,Time\n";
-    attendance.forEach(name=>{
-        data+=name+","+new Date().toLocaleTimeString()+"\n";
-    });
-    function playBeep(){
-    const audio = new Audio("https://www.soundjay.com/buttons/sounds/button-3.mp3");
-    audio.play();
-}
-
-    const blob=new Blob([data],{type:"text/csv"});
-    const a=document.createElement("a");
-    a.href=URL.createObjectURL(blob);
-    a.download="attendance.csv";
-    a.click();
-}
-</script>
-
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
