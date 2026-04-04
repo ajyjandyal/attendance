@@ -137,8 +137,12 @@
                         </div>
                         
                         <div class="w-full h-[400px] bg-gray-900 rounded-lg relative overflow-hidden flex flex-col items-center justify-center border-4 border-gray-800">
-                            <i class="fa-solid fa-video text-gray-600 text-5xl mb-4"></i>
-                            <p class="text-gray-400 font-medium">Waiting for OpenCV Video Stream...</p>
+    <img id="videoStream" src="" class="w-full h-full object-cover hidden" />
+    
+    <div id="placeholder" class="flex flex-col items-center">
+        <i class="fa-solid fa-video text-gray-600 text-5xl mb-4"></i>
+        <p class="text-gray-400 font-medium">Waiting for OpenCV Video Stream...</p>
+    </div>
                             
                             <div class="absolute inset-0 border-2 border-green-500/30 m-8 rounded"></div>
                             <div class="absolute top-8 left-8 w-8 h-8 border-t-4 border-l-4 border-green-500"></div>
@@ -234,79 +238,23 @@
             const now = new Date();
             document.getElementById('currentTime').innerText = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         }
-        let stream = null;
-let attendance = new Set();
-
-// NAVIGATION
-function showSection(id){
-    ["dashboard","scanner","students","export"].forEach(sec=>{
-        document.getElementById(sec).classList.add("hidden");
-    });
-    document.getElementById(id).classList.remove("hidden");
-}
-
-// CAMERA START
-async function startCamera(){
-    const video = document.getElementById("video");
-
-    try {
-        stream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: false
-        });
-
-        video.srcObject = stream;
-        await video.play();
-
-        document.getElementById("status").innerText = "Camera Running";
-
-    } catch (err) {
-        alert("Camera permission denied or not working");
-        console.error(err);
-    }
-}
-
-// CAMERA STOP
-function stopCamera(){
-    if(stream){
-        stream.getTracks().forEach(track => track.stop());
-    }
-    document.getElementById("status").innerText = "Stopped";
-}
-
-// CAPTURE (SIMULATED ATTENDANCE)
-function captureNow(){
-    const name = "Student " + (attendance.size + 1);
-
-    if(!attendance.has(name)){
-        attendance.add(name);
-
-        const log = document.createElement("div");
-        log.innerText = `${name} marked at ${new Date().toLocaleTimeString()}`;
-        document.getElementById("logs").prepend(log);
-
-        document.getElementById("presentCount").innerText = attendance.size;
-    }
-
-    document.getElementById("status").innerText = "Captured";
-}
-
-// EXPORT CSV
-function exportData(){
-    let data = "Name,Time\n";
-    attendance.forEach(name=>{
-        data += name + "," + new Date().toLocaleTimeString() + "\n";
-    });
-
-    const blob = new Blob([data]);
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "attendance.csv";
-    a.click();
-}
-
         setInterval(updateTime, 1000);
         updateTime();
+        const videoImg = document.getElementById('videoStream');
+const placeholder = document.getElementById('placeholder');
+const startBtn = document.querySelector('button:contains("Start Scanner")'); // Use a specific ID in production
+
+function toggleScanner(isOn) {
+    if (isOn) {
+        videoImg.src = "/video_feed"; // Your Python endpoint
+        videoImg.classList.remove('hidden');
+        placeholder.classList.add('hidden');
+    } else {
+        videoImg.src = "";
+        videoImg.classList.add('hidden');
+        placeholder.classList.remove('hidden');
+    }
+}
     </script>
 </body>
-</html>
+</html>.  
