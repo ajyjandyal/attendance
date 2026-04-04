@@ -4,14 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Smart Attend</title>
-    <div id="loginPage" class="flex items-center justify-center h-screen">
-    <div class="bg-white p-6 rounded shadow w-80">
-        <h2 class="text-xl mb-4">Login</h2>
-        <input id="username" placeholder="Username" class="border p-2 w-full mb-2">
-        <input id="password" type="password" placeholder="Password" class="border p-2 w-full mb-2">
-        <button onclick="login()" class="bg-blue-600 text-white w-full py-2">Login</button>
-    </div>
-</div>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
@@ -36,9 +28,19 @@ tailwind.config = {
 
 <body class="bg-gray-50">
 
-<div class="flex h-screen">
+<!-- LOGIN PAGE -->
+<div id="loginPage" class="flex items-center justify-center h-screen">
+    <div class="bg-white p-6 rounded shadow w-80">
+        <h2 class="text-xl mb-4">Login</h2>
+        <input id="username" placeholder="Username" class="border p-2 w-full mb-2">
+        <input id="password" type="password" placeholder="Password" class="border p-2 w-full mb-2">
+        <button onclick="login()" class="bg-blue-600 text-white w-full py-2">Login</button>
+    </div>
+</div>
 
-<!-- SIDEBAR -->
+<!-- MAIN APP -->
+<div id="app" class="hidden flex h-screen">
+
 <aside class="w-64 bg-primary text-white flex flex-col">
     <div class="p-5 font-bold text-lg">SMART ATTEND</div>
 
@@ -50,7 +52,6 @@ tailwind.config = {
     </nav>
 </aside>
 
-<!-- MAIN -->
 <main class="flex-1 p-6 overflow-y-auto">
 
 <!-- DASHBOARD -->
@@ -58,37 +59,25 @@ tailwind.config = {
 <h1 class="text-2xl font-bold mb-6">Overview</h1>
 
 <div class="grid grid-cols-4 gap-6 mb-6">
-<div class="bg-white p-4 rounded shadow">
-<p>Total Students</p>
-<h2 class="text-2xl font-bold">120</h2>
+<div class="bg-white p-4 rounded shadow"><p>Total Students</p><h2>120</h2></div>
+<div class="bg-white p-4 rounded shadow"><p>Present Today</p><h2 id="presentCount">0</h2></div>
+<div class="bg-white p-4 rounded shadow"><p>Absent</p><h2>15</h2></div>
+<div class="bg-white p-4 rounded shadow"><p>Confidence</p><h2>96.8%</h2></div>
 </div>
 
 <div class="bg-white p-4 rounded shadow">
-<p>Present Today</p>
-<h2 class="text-2xl font-bold text-green-600" id="presentCount">0</h2>
-</div>
-
-<div class="bg-white p-4 rounded shadow">
-<p>Absent</p>
-<h2 class="text-2xl font-bold text-red-600">15</h2>
-</div>
-
-<div class="bg-white p-4 rounded shadow">
-<p>Avg Confidence</p>
-<h2 class="text-2xl font-bold text-blue-600">96.8%</h2>
-</div>
-</div>
-
-<!-- LOGS -->
-<div class="bg-white p-4 rounded shadow">
-<h2 class="font-bold mb-4">Recent Logs</h2>
+<h2>Recent Logs</h2>
 <div id="logs"></div>
 </div>
 </div>
 
 <!-- SCANNER -->
 <div id="scanner" class="hidden">
-<h2 class="text-xl font-bold mb-4">AI Scanner</h2>
+<h2 class="text-xl mb-4">AI Scanner</h2>
+
+<button onclick="startCamera()" class="bg-blue-600 text-white px-4 py-2 mb-4">
+Start Camera
+</button>
 
 <div class="relative w-[640px] h-[480px]">
 <video id="video" width="640" height="480" autoplay muted></video>
@@ -97,16 +86,13 @@ tailwind.config = {
 
 <!-- STUDENTS -->
 <div id="students" class="hidden">
-<h2 class="text-xl font-bold mb-4">Student Database</h2>
-<ul>
-<li>Ajay</li>
-<li>Tejas</li>
-</ul>
+<h2>Student Database</h2>
+<ul><li>Ajay</li><li>Tejas</li></ul>
 </div>
 
 <!-- EXPORT -->
 <div id="export" class="hidden">
-<h2 class="text-xl font-bold mb-4">Export Logs</h2>
+<h2>Export Logs</h2>
 <button onclick="exportData()" class="bg-green-600 text-white px-4 py-2">Download CSV</button>
 </div>
 
@@ -114,6 +100,13 @@ tailwind.config = {
 </div>
 
 <script>
+
+// LOGIN
+function login(){
+    document.getElementById("loginPage").style.display = "none";
+    document.getElementById("app").classList.remove("hidden");
+}
+
 // NAVIGATION
 function showSection(id){
     ["dashboard","scanner","students","export"].forEach(sec=>{
@@ -122,16 +115,26 @@ function showSection(id){
     document.getElementById(id).classList.remove("hidden");
 }
 
-// AI VARIABLES
+// AI
 let labeledDescriptors = [];
 let attendance = new Set();
+let modelsLoaded = false;
 
 // LOAD MODELS
-Promise.all([
-    faceapi.nets.tinyFaceDetector.loadFromUri('models'),
-    faceapi.nets.faceLandmark68Net.loadFromUri('models'),
-    faceapi.nets.faceRecognitionNet.loadFromUri('models'),
-]).then(loadFaces);
+async function loadModels(){
+    try {
+        await Promise.all([
+            faceapi.nets.tinyFaceDetector.loadFromUri('./models'),
+            faceapi.nets.faceLandmark68Net.loadFromUri('./models'),
+            faceapi.nets.faceRecognitionNet.loadFromUri('./models'),
+        ]);
+        modelsLoaded = true;
+        loadFaces();
+    } catch (e) {
+        alert("Model loading failed. Check /models folder.");
+        console.error(e);
+    }
+}
 
 // LOAD FACES
 async function loadFaces(){
@@ -147,18 +150,20 @@ async function loadFaces(){
             new faceapi.LabeledFaceDescriptors(label,[detection.descriptor])
         );
     }
-
-    startCamera();
 }
 
 // CAMERA
 async function startCamera(){
+    if(!modelsLoaded){
+        await loadModels();
+    }
+
     const video = document.getElementById("video");
 
-    const stream = await navigator.mediaDevices.getUserMedia({video:{}});
+    const stream = await navigator.mediaDevices.getUserMedia({video:true});
     video.srcObject = stream;
 
-    video.addEventListener('play', ()=>{
+    video.onplay = ()=>{
         const canvas = faceapi.createCanvasFromMedia(video);
         document.querySelector('.relative').append(canvas);
 
@@ -177,9 +182,7 @@ async function startCamera(){
 
             resized.forEach((d)=>{
                 const result = matcher.findBestMatch(d.descriptor);
-                const box = d.detection.box;
-
-                new faceapi.draw.DrawBox(box,{label:result.toString()}).draw(canvas);
+                new faceapi.draw.DrawBox(d.detection.box,{label:result.toString()}).draw(canvas);
 
                 if(result.label !== "unknown"){
                     markAttendance(result.label);
@@ -187,7 +190,7 @@ async function startCamera(){
             });
 
         },100);
-    });
+    };
 }
 
 // ATTENDANCE
@@ -196,7 +199,7 @@ function markAttendance(name){
         attendance.add(name);
 
         const log = document.createElement("div");
-        log.innerText = `${name} marked present at ${new Date().toLocaleTimeString()}`;
+        log.innerText = `${name} marked at ${new Date().toLocaleTimeString()}`;
         document.getElementById("logs").prepend(log);
 
         document.getElementById("presentCount").innerText = attendance.size;
@@ -216,6 +219,7 @@ function exportData(){
     a.download = "attendance.csv";
     a.click();
 }
+
 </script>
 
 </body>
