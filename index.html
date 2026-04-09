@@ -152,6 +152,16 @@
                             <button onclick="stopCamera()" class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md font-medium text-sm hover:bg-gray-50 transition-colors">
                                 <i class="fa-solid fa-stop mr-2"></i> Stop
                             </button>
+                            <div class="mt-4 flex gap-4">
+    <button onclick="markAttendance('ENTRY')" class="px-4 py-2 bg-green-600 text-white rounded-md">
+        Entry
+    </button>
+    <button onclick="markAttendance('EXIT')" class="px-4 py-2 bg-red-600 text-white rounded-md">
+        Exit
+    </button>
+</div>
+
+<canvas id="canvas" style="display:none;"></canvas>
                         </div>
                     </div>
                     </div>
@@ -160,6 +170,32 @@
     </div>
 
 <script>
+    async function markAttendance(type) {
+    const video = document.getElementById("videoElement");
+    const canvas = document.getElementById("canvas");
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0);
+
+    const image = canvas.toDataURL("image/png");
+
+    const res = await fetch("http://127.0.0.1:5000/mark_attendance", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            type: type,
+            image: image
+        })
+    });
+
+    const data = await res.json();
+    alert(data.message);
+}
     function showView(viewName) {
     // 1. Toggle the Views
     document.getElementById('view-dashboard').classList.add('hidden');
