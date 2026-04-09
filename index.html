@@ -109,15 +109,9 @@ async function startCamera() {
 
 // ATTENDANCE
 async function markAttendance(type) {
-    const name = document.getElementById("studentName").value;
     const status = document.getElementById("statusBox");
 
-    if (!name) {
-        status.innerText = "Enter name first";
-        return;
-    }
-
-    status.innerText = "Processing...";
+    status.innerText = "📸 Capturing...";
 
     const video = document.getElementById("videoElement");
     const canvas = document.getElementById("canvas");
@@ -130,18 +124,20 @@ async function markAttendance(type) {
     const image = canvas.toDataURL("image/png");
 
     try {
-        await fetch("http://127.0.0.1:5000/mark_attendance", {
+        const res = await fetch("http://127.0.0.1:5000/mark_attendance", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({ name, type, image })
+            body: JSON.stringify({ type, image })
         });
 
-        status.innerText = `${name} marked ${type}`;
+        const data = await res.json();
+
+        status.innerText = `✅ Attendance Marked (${type})`;
 
         loadAttendance();
 
     } catch {
-        status.innerText = "Backend not running";
+        status.innerText = "❌ Backend not running";
     }
 }
 
