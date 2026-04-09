@@ -153,6 +153,20 @@
                                 <i class="fa-solid fa-stop mr-2"></i> Stop
                             </button>
                             <div class="mt-4 flex gap-4">
+                                <div class="bg-white mt-6 p-4 rounded-xl shadow-sm border">
+    <h2 class="text-lg font-bold mb-4">Attendance Records</h2>
+
+    <table class="w-full text-sm text-left">
+        <thead class="bg-gray-100">
+            <tr>
+                <th class="px-4 py-2">Time</th>
+                <th class="px-4 py-2">Type</th>
+            </tr>
+        </thead>
+        <tbody id="attendanceTable">
+        </tbody>
+    </table>
+</div>
     <button onclick="markAttendance('ENTRY')" class="px-4 py-2 bg-green-600 text-white rounded-md">
         Entry
     </button>
@@ -170,6 +184,26 @@
     </div>
 
 <script>
+    async function loadAttendance() {
+    const table = document.getElementById("attendanceTable");
+
+    const res = await fetch("http://127.0.0.1:5000/get_records");
+    const data = await res.json();
+
+    table.innerHTML = "";
+
+    data.reverse().forEach(record => {
+        const row = `
+            <tr class="border-b">
+                <td class="px-4 py-2">${record.time}</td>
+                <td class="px-4 py-2 font-semibold ${
+                    record.type === "ENTRY" ? "text-green-600" : "text-red-600"
+                }">${record.type}</td>
+            </tr>
+        `;
+        table.innerHTML += row;
+    });
+}
     async function markAttendance(type) {
     const video = document.getElementById("videoElement");
     const canvas = document.getElementById("canvas");
