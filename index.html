@@ -60,7 +60,9 @@ tailwind.config = {
             <button onclick="startCamera()" class="bg-blue-600 text-white px-4 py-2 rounded">Start</button>
             <button onclick="markAttendance('ENTRY')" class="bg-green-600 text-white px-4 py-2 rounded">Entry</button>
             <button onclick="markAttendance('EXIT')" class="bg-red-600 text-white px-4 py-2 rounded">Exit</button>
+            <button onclick="captureImage()">Mark Entry</button>
         </div>
+        
 
         <canvas id="canvas" style="display:none;"></canvas>
     </div>
@@ -92,6 +94,42 @@ tailwind.config = {
 </div>
 
 <script>
+
+    const video = document.createElement('video');
+navigator.mediaDevices.getUserMedia({ video: true })
+  .then(stream => {
+    video.srcObject = stream;
+    video.play();
+  });
+
+    function captureImage() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 300;
+  canvas.height = 200;
+  const ctx = canvas.getContext('2d');
+  
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  const imageData = canvas.toDataURL('image/png');
+
+  saveAttendance(imageData);
+}
+
+    function saveAttendance(image) {
+  const attendance = JSON.parse(localStorage.getItem('attendance')) || [];
+
+  const entry = {
+    date: new Date().toLocaleString(),
+    image: image
+  };
+
+  attendance.push(entry);
+
+  localStorage.setItem('attendance', JSON.stringify(attendance));
+
+  alert("Attendance Marked ✅");
+}
+
 
 // CAMERA
 let videoStream = null;
