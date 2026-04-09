@@ -1,236 +1,123 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Attend - Admin Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
-                    colors: {
-                        primary: '#003366',
-                        secondary: '#bf0000',
-                    }
-                }
-            }
-        }
-    </script>
-</head>
-<body class="bg-gray-50 text-gray-800 font-sans antialiased">
-    <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden"></div>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Attend - Admin Dashboard</title>
 
-    <div class="flex h-screen overflow-hidden">
-        <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-primary text-white flex flex-col shadow-xl transform -translate-x-full transition-transform duration-300 lg:translate-x-0 lg:static lg:inset-0">
-            <div class="h-16 flex items-center px-6 bg-blue-900 border-b border-blue-800">
-                <i class="fa-solid fa-expand text-xl mr-3 text-blue-300"></i>
-                <span class="text-lg font-bold tracking-wider">SMART ATTEND</span>
-            </div>
-            
-          <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-    <a href="javascript:void(0)" onclick="showView('dashboard')" id="nav-dashboard" class="nav-item flex items-center px-4 py-3 bg-blue-800/50 text-white rounded-lg border-l-4 border-secondary">
-        <i class="fa-solid fa-chart-pie w-5"></i>
-        <span class="ml-3 font-medium">Dashboard</span>
-    </a>
-    <a href="javascript:void(0)" onclick="showView('database')" id="nav-database" class="nav-item flex items-center px-4 py-3 text-gray-300 hover:bg-blue-800/50 hover:text-white rounded-lg transition-colors">
-        <i class="fa-solid fa-users w-5"></i>
-        <span class="ml-3 font-medium">Student Database</span>
-    </a>
-</nav>
-<div class="bg-white mt-6 p-6 rounded-xl shadow-lg border">
-    <h2 class="text-xl font-bold mb-4">📊 Attendance Records</h2>
-
-    <table class="w-full text-sm text-left border">
-        <thead class="bg-gray-100">
-            <tr>
-                <th class="px-4 py-3">Name</th>
-                <th class="px-4 py-3">Time</th>
-                <th class="px-4 py-3">Type</th>
-            </tr>
-        </thead>
-        <tbody id="attendanceTable"></tbody>
-    </table>
-</div>
-<div id="view-database" class="hidden">
-    <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-bold text-gray-800">Student Database</h2>
-        <button class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors">
-            <i class="fa-solid fa-user-plus mr-2"></i> Add New Student
-        </button>
-    </div>
-
-    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex flex-col md:flex-row gap-4">
-        <div class="relative flex-1">
-            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-            <input type="text" placeholder="Search by name or PRN..." class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20">
-        </div>
-        <select class="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none text-gray-600">
-            <option>All Departments</option>
-            <option>Cloud Computing</option>
-            <option>AI & ML</option>
-        </select>
-    </div>
-
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <table class="w-full text-left border-collapse">
-            <thead class="bg-gray-50 border-b border-gray-100">
-                <tr>
-                    <th class="px-6 py-4 text-sm font-semibold text-gray-600">Student</th>
-                    <th class="px-6 py-4 text-sm font-semibold text-gray-600">PRN</th>
-                    <th class="px-6 py-4 text-sm font-semibold text-gray-600">Department</th>
-                    <th class="px-6 py-4 text-sm font-semibold text-gray-600">Status</th>
-                    <th class="px-6 py-4 text-sm font-semibold text-gray-600 text-right">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-50">
-                <tr class="hover:bg-gray-50 transition-colors">
-                    <td class="px-6 py-4 flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full bg-blue-100 text-primary flex items-center justify-center font-bold text-xs">AJ</div>
-                        <span class="font-medium">Ajay Jandyal</span>
-                    </td>
-                    <td class="px-6 py-4 text-sm text-gray-600">1132231238</td>
-                    <td class="px-6 py-4 text-sm text-gray-600">Cloud Computing</td>
-                    <td class="px-6 py-4">
-                        <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">Active</span>
-                    </td>
-                    <td class="px-6 py-4 text-right">
-                        <button class="text-gray-400 hover:text-primary mr-3"><i class="fa-solid fa-pen-to-square"></i></button>
-                        <button class="text-gray-400 hover:text-secondary"><i class="fa-solid fa-trash"></i></button>
-                    </td>
-                </tr>
-                <tr class="hover:bg-gray-50 transition-colors">
-                    <td class="px-6 py-4 flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full bg-blue-100 text-primary flex items-center justify-center font-bold text-xs">TD</div>
-                        <span class="font-medium">Tejas Dharashivkar</span>
-                    </td>
-                    <td class="px-6 py-4 text-sm text-gray-600">1132230801</td>
-                    <td class="px-6 py-4 text-sm text-gray-600">Cloud Computing</td>
-                    <td class="px-6 py-4">
-                        <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">Active</span>
-                    </td>
-                    <td class="px-6 py-4 text-right">
-                        <button class="text-gray-400 hover:text-primary mr-3"><i class="fa-solid fa-pen-to-square"></i></button>
-                        <button class="text-gray-400 hover:text-secondary"><i class="fa-solid fa-trash"></i></button>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-</div>
-                    <span class="ml-3 font-medium">Dashboard</span>
-                </a>
-        </aside>
-
-        <main class="flex-1 flex flex-col overflow-hidden relative">
-            <header class="h-16 bg-white shadow-sm flex items-center justify-between px-8 z-10">
-                <div class="flex items-center gap-4">
-                    <button onclick="toggleSidebar()" class="lg:hidden text-gray-600">
-                        <i class="fa-solid fa-bars text-xl"></i>
-                    </button>
-                    <h1 class="text-xl font-bold text-gray-800">Overview</h1>
-                </div>
-                </header>
-
-            <div class="flex-1 overflow-y-auto p-4 md:p-8">
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-                    </div>
-<input id="studentName" placeholder="Enter Student Name"
-class="px-4 py-2 border rounded-lg w-full mb-3">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                        <h2 class="text-lg font-bold text-gray-800 mb-4">Live Camera Feed</h2>
-                        
-                        <div class="w-full h-[300px] md:h-[400px] bg-gray-900 rounded-lg relative overflow-hidden flex flex-col items-center justify-center border-4 border-gray-800">
-                            <video id="videoElement" class="w-full h-full object-cover hidden" autoplay playsinline muted></video>
-                            
-                            <div id="cameraPlaceholder" class="flex flex-col items-center">
-                                <i class="fa-solid fa-video text-gray-600 text-5xl mb-4"></i>
-                                <p class="text-gray-400 font-medium text-center px-4">Camera is currently offline</p>
-                            </div>
-                            <div id="statusBox" class="mt-4 text-center font-medium text-gray-600">
-    System Ready
-</div>
-                            <div class="absolute top-8 left-8 w-8 h-8 border-t-4 border-l-4 border-green-500"></div>
-                            <div class="absolute top-8 right-8 w-8 h-8 border-t-4 border-r-4 border-green-500"></div>
-                            <div class="absolute bottom-8 left-8 w-8 h-8 border-b-4 border-l-4 border-green-500"></div>
-                            <div class="absolute bottom-8 right-8 w-8 h-8 border-b-4 border-r-4 border-green-500"></div>
-                        </div>
-                        
-                        <div class="mt-4 flex gap-4">
-                            <button onclick="startCamera()" class="px-4 py-2 bg-primary text-white rounded-md font-medium text-sm hover:bg-blue-800 transition-colors">
-                                <i class="fa-solid fa-play mr-2"></i> Start Scanner
-                            </button>
-                            <button onclick="stopCamera()" class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md font-medium text-sm hover:bg-gray-50 transition-colors">
-                                <i class="fa-solid fa-stop mr-2"></i> Stop
-                            </button>
-                            <div class="mt-4 flex gap-4">
-                                <div class="bg-white mt-6 p-4 rounded-xl shadow-sm border">
-    <h2 class="text-lg font-bold mb-4">Attendance Records</h2>
-
-    <table class="w-full text-sm text-left">
-        <thead class="bg-gray-100">
-            <tr>
-                <th class="px-4 py-2">Time</th>
-                <th class="px-4 py-2">Type</th>
-            </tr>
-        </thead>
-        <tbody id="attendanceTable">
-        </tbody>
-    </table>
-</div>
-    <button onclick="markAttendance('ENTRY')" class="px-4 py-2 bg-green-600 text-white rounded-md">
-        Entry
-    </button>
-    <button onclick="markAttendance('EXIT')" class="px-4 py-2 bg-red-600 text-white rounded-md">
-        Exit
-    </button>
-</div>
-
-<canvas id="canvas" style="display:none;"></canvas>
-                        </div>
-                    </div>
-                    </div>
-            </div>
-        </main>
-    </div>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <script>
- async function loadAttendance() {
-    const table = document.getElementById("attendanceTable");
-
-    const res = await fetch("http://127.0.0.1:5000/get_records");
-    const data = await res.json();
-
-    table.innerHTML = "";
-
-    data.reverse().forEach(r => {
-        table.innerHTML += `
-            <tr class="border-b">
-                <td class="px-4 py-2">${r.name}</td>
-                <td class="px-4 py-2">${r.time}</td>
-                <td class="px-4 py-2 ${
-                    r.type === "ENTRY" ? "text-green-600" : "text-red-600"
-                } font-semibold">${r.type}</td>
-            </tr>
-        `;
-    });
+tailwind.config = {
+    theme: {
+        extend: {
+            colors: {
+                primary: '#003366',
+                secondary: '#bf0000'
+            }
+        }
+    }
 }
-   
-    async function markAttendance(type) {
-    const statusBox = document.getElementById("statusBox");
+</script>
+</head>
+
+<body class="bg-gray-100">
+
+<!-- MAIN -->
+<div class="flex h-screen">
+
+<!-- SIDEBAR -->
+<aside class="w-64 bg-primary text-white p-5">
+    <h1 class="text-xl font-bold mb-6">SMART ATTEND</h1>
+
+    <button onclick="showView('dashboard')" class="block mb-3">Dashboard</button>
+    <button onclick="showView('database')" class="block">Student DB</button>
+</aside>
+
+<!-- CONTENT -->
+<div class="flex-1 p-6 overflow-auto">
+
+<!-- DASHBOARD -->
+<div id="view-dashboard">
+
+    <!-- NAME INPUT -->
+    <input id="studentName" placeholder="Enter Student Name"
+    class="px-4 py-2 border rounded w-full mb-4">
+
+    <!-- CAMERA -->
+    <div class="bg-white p-6 rounded shadow mb-6">
+        <h2 class="font-bold mb-4">Live Camera</h2>
+
+        <div class="h-64 bg-black flex items-center justify-center rounded">
+            <video id="videoElement" class="w-full h-full hidden" autoplay></video>
+            <span id="cameraPlaceholder" class="text-gray-400">Camera Off</span>
+        </div>
+
+        <div id="statusBox" class="mt-3 text-center">System Ready</div>
+
+        <div class="mt-4 flex gap-3">
+            <button onclick="startCamera()" class="bg-blue-600 text-white px-4 py-2 rounded">Start</button>
+            <button onclick="markAttendance('ENTRY')" class="bg-green-600 text-white px-4 py-2 rounded">Entry</button>
+            <button onclick="markAttendance('EXIT')" class="bg-red-600 text-white px-4 py-2 rounded">Exit</button>
+        </div>
+
+        <canvas id="canvas" style="display:none;"></canvas>
+    </div>
+
+    <!-- TABLE -->
+    <div class="bg-white p-6 rounded shadow">
+        <h2 class="font-bold mb-4">Attendance Records</h2>
+
+        <table class="w-full">
+            <thead class="bg-gray-200">
+                <tr>
+                    <th class="p-2">Name</th>
+                    <th class="p-2">Time</th>
+                    <th class="p-2">Type</th>
+                </tr>
+            </thead>
+            <tbody id="attendanceTable"></tbody>
+        </table>
+    </div>
+
+</div>
+
+<!-- DATABASE VIEW -->
+<div id="view-database" class="hidden">
+    <h2 class="text-xl font-bold">Student Database</h2>
+</div>
+
+</div>
+</div>
+
+<script>
+
+// CAMERA
+let videoStream = null;
+
+async function startCamera() {
+    const video = document.getElementById("videoElement");
+    const placeholder = document.getElementById("cameraPlaceholder");
+
+    videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
+
+    video.srcObject = videoStream;
+    video.classList.remove("hidden");
+    placeholder.style.display = "none";
+}
+
+// ATTENDANCE
+async function markAttendance(type) {
     const name = document.getElementById("studentName").value;
+    const status = document.getElementById("statusBox");
 
     if (!name) {
-        statusBox.innerText = "⚠️ Enter student name";
+        status.innerText = "Enter name first";
         return;
     }
 
-    statusBox.innerText = "Processing...";
+    status.innerText = "Processing...";
 
     const video = document.getElementById("videoElement");
     const canvas = document.getElementById("canvas");
@@ -238,101 +125,59 @@ class="px-4 py-2 border rounded-lg w-full mb-3">
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
 
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(video, 0, 0);
+    canvas.getContext("2d").drawImage(video, 0, 0);
 
     const image = canvas.toDataURL("image/png");
 
     try {
-        const res = await fetch("http://127.0.0.1:5000/mark_attendance", {
+        await fetch("http://127.0.0.1:5000/mark_attendance", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({ type, name, image })
+            body: JSON.stringify({ name, type, image })
         });
 
-        const data = await res.json();
+        status.innerText = `${name} marked ${type}`;
 
-        statusBox.innerText = `✅ ${name} marked ${type}`;
+        loadAttendance();
 
-        loadAttendance(); // refresh table
-
-    } catch (err) {
-        statusBox.innerText = "❌ Server not running";
+    } catch {
+        status.innerText = "Backend not running";
     }
 }
-    function showView(viewName) {
-    // 1. Toggle the Views
-    document.getElementById('view-dashboard').classList.add('hidden');
-    document.getElementById('view-database').classList.add('hidden');
-    document.getElementById('view-' + viewName).classList.remove('hidden');
 
-    // 2. Update Sidebar Active Styles
-    const navItems = document.querySelectorAll('.nav-item');
-    navItems.forEach(item => {
-        item.classList.remove('bg-blue-800/50', 'text-white', 'border-l-4', 'border-secondary');
-        item.classList.add('text-gray-300');
-    });
-
-    const activeItem = document.getElementById('nav-' + viewName);
-    activeItem.classList.add('bg-blue-800/50', 'text-white', 'border-l-4', 'border-secondary');
-    activeItem.classList.remove('text-gray-300');
-
-    // 3. Close sidebar on mobile after clicking
-    if (window.innerWidth < 1024) {
-        toggleSidebar();
-    }
-}
-// 1. CLOCK LOGIC
-function updateTime() {
-    const now = new Date();
-    const timeSpan = document.getElementById('currentTime');
-    if(timeSpan) timeSpan.innerText = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-}
-setInterval(updateTime, 1000);
-updateTime();
-
-// 2. SIDEBAR TOGGLE (For Mobile Responsiveness)
-function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebarOverlay');
-    sidebar.classList.toggle('-translate-x-full');
-    overlay.classList.toggle('hidden');
-}
-
-// 3. CAMERA LOGIC
-let videoStream = null;
-
-async function startCamera() {
-    const video = document.getElementById("videoElement");
-    const placeholder = document.getElementById("cameraPlaceholder");
+// LOAD TABLE
+async function loadAttendance() {
+    const table = document.getElementById("attendanceTable");
 
     try {
-        videoStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: "user" } // or "environment" for back camera
+        const res = await fetch("http://127.0.0.1:5000/get_records");
+        const data = await res.json();
+
+        table.innerHTML = "";
+
+        data.reverse().forEach(r => {
+            table.innerHTML += `
+            <tr>
+                <td class="p-2">${r.name}</td>
+                <td class="p-2">${r.time}</td>
+                <td class="p-2">${r.type}</td>
+            </tr>`;
         });
 
-        video.srcObject = videoStream;
-        video.classList.remove("hidden");
-        placeholder.classList.add("hidden");
-    } catch (err) {
-        alert("Error: Please grant camera permissions.");
-        console.error("Camera Error:", err);
-    }
+    } catch {}
 }
 
-function stopCamera() {
-    const video = document.getElementById("videoElement");
-    const placeholder = document.getElementById("cameraPlaceholder");
+// AUTO REFRESH
+setInterval(loadAttendance, 2000);
 
-    if (videoStream) {
-        videoStream.getTracks().forEach(track => track.stop());
-        videoStream = null;
-    }
+// VIEW SWITCH
+function showView(view) {
+    document.getElementById("view-dashboard").classList.add("hidden");
+    document.getElementById("view-database").classList.add("hidden");
 
-    video.srcObject = null;
-    video.classList.add("hidden");
-    placeholder.classList.remove("hidden");
+    document.getElementById("view-" + view).classList.remove("hidden");
 }
+
 </script>
 
 </body>
