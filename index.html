@@ -145,22 +145,18 @@ async function markAttendance(type) {
 async function loadAttendance() {
     const table = document.getElementById("attendanceTable");
 
-    try {
-        const res = await fetch("http://127.0.0.1:5000/get_records");
-        const data = await res.json();
+    const res = await fetch("http://127.0.0.1:5000/get_records");
+    const data = await res.json();
 
-        table.innerHTML = "";
+    table.innerHTML = "";
 
-        data.reverse().forEach(r => {
-            table.innerHTML += `
-            <tr>
-                <td class="p-2">${r.name}</td>
-                <td class="p-2">${r.time}</td>
-                <td class="p-2">${r.type}</td>
-            </tr>`;
-        });
-
-    } catch {}
+    data.reverse().forEach(r => {
+        table.innerHTML += `
+        <tr>
+            <td class="p-2">${r.time}</td>
+            <td class="p-2">${r.type}</td>
+        </tr>`;
+    });
 }
 
 // AUTO REFRESH
