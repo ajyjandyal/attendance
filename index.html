@@ -46,6 +46,12 @@ tailwind.config = {
     class="px-4 py-2 border rounded w-full mb-4">
 
     <!-- CAMERA -->
+    <video id="video" width="300" autoplay></video>
+<br><br>
+<button onclick="capture()">Mark Entry</button>
+
+<h2>Attendance Records</h2>
+<div id="records"></div>
     <div class="bg-white p-6 rounded shadow mb-6">
         <h2 class="font-bold mb-4">Live Camera</h2>
 
@@ -94,6 +100,66 @@ tailwind.config = {
 </div>
 
 <script>
+const video = document.getElementById('video');
+
+// Start camera
+navigator.mediaDevices.getUserMedia({ video: true })
+.then(stream => {
+  video.srcObject = stream;
+})
+.catch(err => {
+  alert("Camera access denied ❌");
+});
+
+// Capture image
+function capture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 300;
+  canvas.height = 200;
+  const ctx = canvas.getContext('2d');
+
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  const image = canvas.toDataURL("image/png");
+
+  saveAttendance(image);
+}
+
+// Save attendance
+function saveAttendance(image) {
+  let data = JSON.parse(localStorage.getItem("attendance")) || [];
+
+  data.push({
+    time: new Date().toLocaleString(),
+    image: image
+  });
+
+  localStorage.setItem("attendance", JSON.stringify(data));
+
+  alert("Attendance Marked ✅");
+
+  showRecords();
+}
+
+// Show records
+function showRecords() {
+  let data = JSON.parse(localStorage.getItem("attendance")) || [];
+  let recordsDiv = document.getElementById("records");
+
+  recordsDiv.innerHTML = "";
+
+  data.forEach(item => {
+    recordsDiv.innerHTML += `
+      <div style="margin-bottom:10px;">
+        <p>${item.time}</p>
+        <img src="${item.image}" width="150"/>
+      </div>
+    `;
+  });
+}
+
+// Load existing data
+window.onload = showRecords;
 
     const video = document.createElement('video');
 navigator.mediaDevices.getUserMedia({ video: true })
