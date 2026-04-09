@@ -98,20 +98,20 @@ tailwind.config = {
 
 </div>
 </div>
-
 <script>
 const video = document.getElementById('video');
 
-// Start camera
-navigator.mediaDevices.getUserMedia({ video: true })
-.then(stream => {
-  video.srcObject = stream;
-})
-.catch(err => {
-  alert("Camera access denied ❌");
-});
+// START CAMERA
+async function startCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    video.srcObject = stream;
+  } catch (err) {
+    alert("Camera permission denied ❌");
+  }
+}
 
-// Capture image
+// CAPTURE IMAGE
 function capture() {
   const canvas = document.createElement('canvas');
   canvas.width = 300;
@@ -125,7 +125,7 @@ function capture() {
   saveAttendance(image);
 }
 
-// Save attendance
+// SAVE DATA
 function saveAttendance(image) {
   let data = JSON.parse(localStorage.getItem("attendance")) || [];
 
@@ -141,7 +141,7 @@ function saveAttendance(image) {
   showRecords();
 }
 
-// Show records
+// SHOW RECORDS
 function showRecords() {
   let data = JSON.parse(localStorage.getItem("attendance")) || [];
   let recordsDiv = document.getElementById("records");
@@ -158,122 +158,11 @@ function showRecords() {
   });
 }
 
-// Load existing data
-window.onload = showRecords;
-
-    const video = document.createElement('video');
-navigator.mediaDevices.getUserMedia({ video: true })
-  .then(stream => {
-    video.srcObject = stream;
-    video.play();
-  });
-
-    function captureImage() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 300;
-  canvas.height = 200;
-  const ctx = canvas.getContext('2d');
-  
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-  const imageData = canvas.toDataURL('image/png');
-
-  saveAttendance(imageData);
-}
-
-    function saveAttendance(image) {
-  const attendance = JSON.parse(localStorage.getItem('attendance')) || [];
-
-  const entry = {
-    date: new Date().toLocaleString(),
-    image: image
-  };
-
-  attendance.push(entry);
-
-  localStorage.setItem('attendance', JSON.stringify(attendance));
-
-  alert("Attendance Marked ✅");
-}
-
-
-// CAMERA
-let videoStream = null;
-
-async function startCamera() {
-    const video = document.getElementById("videoElement");
-    const placeholder = document.getElementById("cameraPlaceholder");
-
-    videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
-
-    video.srcObject = videoStream;
-    video.classList.remove("hidden");
-    placeholder.style.display = "none";
-}
-
-// ATTENDANCE
-async function markAttendance(type) {
-    const status = document.getElementById("statusBox");
-
-    status.innerText = "📸 Capturing...";
-
-    const video = document.getElementById("videoElement");
-    const canvas = document.getElementById("canvas");
-
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-
-    canvas.getContext("2d").drawImage(video, 0, 0);
-
-    const image = canvas.toDataURL("image/png");
-
-    try {
-        const res = await fetch("http://127.0.0.1:5000/mark_attendance", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({ type, image })
-        });
-
-        const data = await res.json();
-
-        status.innerText = `✅ Attendance Marked (${type})`;
-
-        loadAttendance();
-
-    } catch {
-        status.innerText = "❌ Backend not running";
-    }
-}
-
-// LOAD TABLE
-async function loadAttendance() {
-    const table = document.getElementById("attendanceTable");
-
-    const res = await fetch("http://127.0.0.1:5000/get_records");
-    const data = await res.json();
-
-    table.innerHTML = "";
-
-    data.reverse().forEach(r => {
-        table.innerHTML += `
-        <tr>
-            <td class="p-2">${r.time}</td>
-            <td class="p-2">${r.type}</td>
-        </tr>`;
-    });
-}
-
-// AUTO REFRESH
-setInterval(loadAttendance, 2000);
-
-// VIEW SWITCH
-function showView(view) {
-    document.getElementById("view-dashboard").classList.add("hidden");
-    document.getElementById("view-database").classList.add("hidden");
-
-    document.getElementById("view-" + view).classList.remove("hidden");
-}
-
+// LOAD ON START
+window.onload = () => {
+  startCamera();
+  showRecords();
+};
 </script>
 
 </body>
