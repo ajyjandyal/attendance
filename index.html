@@ -42,7 +42,20 @@
         <span class="ml-3 font-medium">Student Database</span>
     </a>
 </nav>
+<div class="bg-white mt-6 p-6 rounded-xl shadow-lg border">
+    <h2 class="text-xl font-bold mb-4">📊 Attendance Records</h2>
 
+    <table class="w-full text-sm text-left border">
+        <thead class="bg-gray-100">
+            <tr>
+                <th class="px-4 py-3">Name</th>
+                <th class="px-4 py-3">Time</th>
+                <th class="px-4 py-3">Type</th>
+            </tr>
+        </thead>
+        <tbody id="attendanceTable"></tbody>
+    </table>
+</div>
 <div id="view-database" class="hidden">
     <div class="flex justify-between items-center mb-6">
         <h2 class="text-2xl font-bold text-gray-800">Student Database</h2>
@@ -126,7 +139,8 @@
             <div class="flex-1 overflow-y-auto p-4 md:p-8">
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
                     </div>
-
+<input id="studentName" placeholder="Enter Student Name"
+class="px-4 py-2 border rounded-lg w-full mb-3">
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                         <h2 class="text-lg font-bold text-gray-800 mb-4">Live Camera Feed</h2>
@@ -138,7 +152,9 @@
                                 <i class="fa-solid fa-video text-gray-600 text-5xl mb-4"></i>
                                 <p class="text-gray-400 font-medium text-center px-4">Camera is currently offline</p>
                             </div>
-                            
+                            <div id="statusBox" class="mt-4 text-center font-medium text-gray-600">
+    System Ready
+</div>
                             <div class="absolute top-8 left-8 w-8 h-8 border-t-4 border-l-4 border-green-500"></div>
                             <div class="absolute top-8 right-8 w-8 h-8 border-t-4 border-r-4 border-green-500"></div>
                             <div class="absolute bottom-8 left-8 w-8 h-8 border-b-4 border-l-4 border-green-500"></div>
@@ -184,7 +200,7 @@
     </div>
 
 <script>
-    async function loadAttendance() {
+ async function loadAttendance() {
     const table = document.getElementById("attendanceTable");
 
     const res = await fetch("http://127.0.0.1:5000/get_records");
@@ -192,19 +208,30 @@
 
     table.innerHTML = "";
 
-    data.reverse().forEach(record => {
-        const row = `
+    data.reverse().forEach(r => {
+        table.innerHTML += `
             <tr class="border-b">
-                <td class="px-4 py-2">${record.time}</td>
-                <td class="px-4 py-2 font-semibold ${
-                    record.type === "ENTRY" ? "text-green-600" : "text-red-600"
-                }">${record.type}</td>
+                <td class="px-4 py-2">${r.name}</td>
+                <td class="px-4 py-2">${r.time}</td>
+                <td class="px-4 py-2 ${
+                    r.type === "ENTRY" ? "text-green-600" : "text-red-600"
+                } font-semibold">${r.type}</td>
             </tr>
         `;
-        table.innerHTML += row;
     });
 }
+   
     async function markAttendance(type) {
+    const statusBox = document.getElementById("statusBox");
+    const name = document.getElementById("studentName").value;
+
+    if (!name) {
+        statusBox.innerText = "⚠️ Enter student name";
+        return;
+    }
+
+    statusBox.innerText = "Processing...";
+
     const video = document.getElementById("videoElement");
     const canvas = document.getElementById("canvas");
 
@@ -216,19 +243,22 @@
 
     const image = canvas.toDataURL("image/png");
 
-    const res = await fetch("http://127.0.0.1:5000/mark_attendance", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            type: type,
-            image: image
-        })
-    });
+    try {
+        const res = await fetch("http://127.0.0.1:5000/mark_attendance", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ type, name, image })
+        });
 
-    const data = await res.json();
-    alert(data.message);
+        const data = await res.json();
+
+        statusBox.innerText = `✅ ${name} marked ${type}`;
+
+        loadAttendance(); // refresh table
+
+    } catch (err) {
+        statusBox.innerText = "❌ Server not running";
+    }
 }
     function showView(viewName) {
     // 1. Toggle the Views
