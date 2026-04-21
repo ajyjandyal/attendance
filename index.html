@@ -6,16 +6,76 @@
 <title>Smart Attend</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 <style>
   body { font-family: 'Segoe UI', sans-serif; }
   video { transform: scaleX(-1); }
-  .face-box { position: absolute; border: 2px solid #22c55e; pointer-events: none; }
-  .face-label { position: absolute; background: #22c55e; color: white; font-size: 11px; padding: 2px 6px; }
-  #videoWrap { position: relative; display: inline-block; }
+  canvas { transform: scaleX(-1); }
+  #videoWrap { position: relative; display: inline-block; width: 100%; }
+
+  /* Autocomplete dropdown */
+  #nameDropdown {
+    position: absolute;
+    z-index: 100;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    max-height: 180px;
+    overflow-y: auto;
+    width: 100%;
+    top: 100%;
+    left: 0;
+  }
+  #nameDropdown div {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #374151;
+  }
+  #nameDropdown div:hover { background: #eff6ff; color: #1d4ed8; }
+
+  .thumb-img {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+    cursor: pointer;
+  }
+
+  /* Modal for full image */
+  #imgModal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+  }
+  #imgModal.open { display: flex; }
+  #imgModal img {
+    max-width: 90vw;
+    max-height: 85vh;
+    border-radius: 12px;
+    transform: scaleX(-1);
+  }
+
+  .pulse-dot {
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
 </style>
 </head>
 <body class="bg-gray-100">
+
+<!-- Full-image modal -->
+<div id="imgModal" onclick="this.classList.remove('open')">
+  <img id="imgModalSrc" src="" alt="Captured photo">
+</div>
 
 <div class="flex h-screen">
 
@@ -36,7 +96,7 @@
     </button>
     <div class="mt-auto text-xs text-white/40">
       <div>Storage: LocalStorage</div>
-      <div id="syncStatus" class="text-green-300 mt-1">Ready</div>
+      <div id="syncStatus" class="text-green-300 mt-1">✓ Ready</div>
     </div>
   </aside>
 
@@ -74,12 +134,21 @@
           </div>
 
           <div id="videoWrap" class="rounded-lg overflow-hidden bg-black w-full h-48 flex items-center justify-center mb-3">
-            <video id="video" class="w-full h-full object-cover hidden" autoplay muted></video>
-            <span id="camPlaceholder" class="text-gray-500 text-sm">Click Start Camera</span>
+            <video id="video" class="w-full h-full object-cover hidden" autoplay muted playsinline></video>
+            <span id="camPlaceholder" class="text-gray-500 text-sm"><i class="fas fa-camera mr-1"></i>Click Start Camera</span>
           </div>
 
-          <input id="studentName" placeholder="Student name (or detected automatically)"
-            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-blue-300" />
+          <!-- Name input with autocomplete dropdown -->
+          <div class="relative mb-3">
+            <input id="studentName"
+              placeholder="Type or select student name…"
+              autocomplete="off"
+              oninput="filterNameDropdown()"
+              onfocus="filterNameDropdown()"
+              onblur="setTimeout(closeNameDropdown, 200)"
+              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+            <div id="nameDropdown" class="hidden"></div>
+          </div>
 
           <div class="flex gap-2">
             <button onclick="startCamera()"
@@ -111,13 +180,14 @@
             <table class="w-full text-sm">
               <thead>
                 <tr class="text-xs text-gray-500 border-b">
+                  <th class="text-left py-2">Photo</th>
                   <th class="text-left py-2">Name</th>
                   <th class="text-left py-2">Time</th>
                   <th class="text-left py-2">Type</th>
                 </tr>
               </thead>
               <tbody id="attendanceTable">
-                <tr><td colspan="3" class="text-gray-400 text-center py-6">No records yet</td></tr>
+                <tr><td colspan="4" class="text-gray-400 text-center py-6">No records yet</td></tr>
               </tbody>
             </table>
           </div>
@@ -138,26 +208,33 @@
         </div>
 
         <!-- Add Student Form -->
-        <div id="addStudentForm" class="hidden bg-gray-50 rounded-lg p-4 mb-4">
+        <div id="addStudentForm" class="hidden bg-gray-50 rounded-lg p-4 mb-4 border border-gray-200">
+          <p class="text-xs text-gray-500 mb-3">All registered students will appear in the attendance dropdown on the Dashboard.</p>
           <div class="grid grid-cols-2 gap-3">
-            <input id="newName" placeholder="Full Name" class="border border-gray-200 rounded px-3 py-2 text-sm" />
-            <input id="newId" placeholder="Student ID / Roll No." class="border border-gray-200 rounded px-3 py-2 text-sm" />
-            <input id="newDept" placeholder="Department" class="border border-gray-200 rounded px-3 py-2 text-sm" />
-            <input id="newEmail" placeholder="Email (optional)" class="border border-gray-200 rounded px-3 py-2 text-sm" />
+            <input id="newName" placeholder="Full Name *" class="border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+            <input id="newId" placeholder="Student ID / Roll No. *" class="border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+            <input id="newDept" placeholder="Department" class="border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+            <input id="newEmail" placeholder="Email (optional)" class="border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
           </div>
           <div class="flex gap-2 mt-3">
-            <button onclick="addStudent()" class="bg-green-500 text-white text-sm px-4 py-2 rounded-lg">Save</button>
+            <button onclick="addStudent()" class="bg-green-500 hover:bg-green-600 text-white text-sm px-4 py-2 rounded-lg"><i class="fas fa-save mr-1"></i>Save Student</button>
             <button onclick="document.getElementById('addStudentForm').classList.add('hidden')"
-              class="bg-gray-200 text-gray-700 text-sm px-4 py-2 rounded-lg">Cancel</button>
+              class="bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm px-4 py-2 rounded-lg">Cancel</button>
           </div>
         </div>
 
-        <table class="w-full text-sm">
+        <div id="dbEmpty" class="hidden text-center py-8 text-gray-400">
+          <i class="fas fa-users text-4xl mb-3 block"></i>
+          No students added yet. Click "+ Add Student" to begin.
+        </div>
+
+        <table class="w-full text-sm" id="dbTable">
           <thead>
             <tr class="text-xs text-gray-500 border-b">
               <th class="text-left py-2">Name</th>
               <th class="text-left py-2">ID</th>
               <th class="text-left py-2">Department</th>
+              <th class="text-left py-2">Email</th>
               <th class="text-left py-2">Total Present</th>
               <th class="text-left py-2">Action</th>
             </tr>
@@ -174,7 +251,7 @@
           <h2 class="font-semibold text-gray-700">Attendance Report</h2>
           <button onclick="exportCSV()"
             class="bg-green-500 text-white text-sm px-4 py-2 rounded-lg hover:bg-green-600">
-            Download CSV
+            <i class="fas fa-download mr-1"></i>Download CSV
           </button>
         </div>
         <div id="reportTable"></div>
@@ -185,46 +262,65 @@
 </div>
 
 <script>
-// ── DATA ──────────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+//  STORAGE HELPERS
+// ══════════════════════════════════════════════════════════════
 function getData(key) {
   try { return JSON.parse(localStorage.getItem(key)) || []; }
   catch { return []; }
 }
 function setData(key, val) {
-  localStorage.setItem(key, JSON.stringify(val));
+  try {
+    localStorage.setItem(key, JSON.stringify(val));
+    document.getElementById('syncStatus').textContent = '✓ Saved';
+    setTimeout(() => document.getElementById('syncStatus').textContent = '✓ Ready', 1500);
+  } catch(e) {
+    document.getElementById('syncStatus').textContent = '⚠ Storage full!';
+  }
 }
 
+// ══════════════════════════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════════════════════════
 let currentView = 'dashboard';
 
-// ── NAVIGATION ────────────────────────────────────────────────────────────────
 function showView(name) {
   ['dashboard','database','reports'].forEach(v => {
     document.getElementById('view-' + v).classList.add('hidden');
-    document.getElementById('btn-' + v)?.classList.remove('bg-white/20');
-    document.getElementById('btn-' + v)?.classList.add('text-white/70');
+    const btn = document.getElementById('btn-' + v);
+    btn.classList.remove('bg-white/20');
+    btn.classList.add('text-white/70');
   });
   document.getElementById('view-' + name).classList.remove('hidden');
   const btn = document.getElementById('btn-' + name);
-  btn?.classList.add('bg-white/20');
-  btn?.classList.remove('text-white/70');
+  btn.classList.add('bg-white/20');
+  btn.classList.remove('text-white/70');
   currentView = name;
+
   if (name === 'database') renderStudentTable();
-  if (name === 'reports') renderReports();
-  if (name === 'dashboard') renderAttendanceTable();
+  if (name === 'reports')  renderReports();
+  if (name === 'dashboard') { renderAttendanceTable(); updateStats(); }
 }
 
-// ── CAMERA ────────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+//  CAMERA
+// ══════════════════════════════════════════════════════════════
+let cameraStream = null;
+
 async function startCamera() {
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(t => t.stop());
+    }
+    cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
     const video = document.getElementById('video');
-    video.srcObject = stream;
+    video.srcObject = cameraStream;
     video.classList.remove('hidden');
     document.getElementById('camPlaceholder').classList.add('hidden');
     setStatus('Camera active', 'green');
-  } catch (e) {
+  } catch(e) {
     setStatus('Camera permission denied', 'red');
-    alert('Please allow camera access in your browser.');
+    alert('Please allow camera access in your browser settings and reload the page.');
   }
 }
 
@@ -232,37 +328,93 @@ function setStatus(msg, color) {
   document.getElementById('statusText').textContent = msg;
   const dot = document.getElementById('statusDot');
   dot.className = 'inline-block w-2 h-2 rounded-full';
-  if (color === 'green') dot.classList.add('bg-green-500');
-  else if (color === 'red') dot.classList.add('bg-red-500');
-  else dot.classList.add('bg-gray-400');
+  if (color === 'green') { dot.classList.add('bg-green-500', 'pulse-dot'); }
+  else if (color === 'red') { dot.classList.add('bg-red-500'); }
+  else { dot.classList.add('bg-gray-400'); }
 }
 
 function captureFrame() {
   const video = document.getElementById('video');
   const canvas = document.getElementById('canvas');
-  canvas.width = video.videoWidth || 300;
-  canvas.height = video.videoHeight || 200;
-  canvas.getContext('2d').drawImage(video, 0, 0);
+  if (!video || video.videoWidth === 0) return null;
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  // Draw mirrored (since video CSS is mirrored, canvas should match real orientation)
+  const ctx = canvas.getContext('2d');
+  ctx.save();
+  ctx.scale(-1, 1);
+  ctx.drawImage(video, -canvas.width, 0);
+  ctx.restore();
   return canvas.toDataURL('image/jpeg', 0.6);
 }
 
-// ── ATTENDANCE ────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+//  NAME AUTOCOMPLETE DROPDOWN
+// ══════════════════════════════════════════════════════════════
+function filterNameDropdown() {
+  const input = document.getElementById('studentName');
+  const dropdown = document.getElementById('nameDropdown');
+  const query = input.value.trim().toLowerCase();
+  const students = getData('students');
+
+  const matches = students.filter(s =>
+    s.name.toLowerCase().includes(query)
+  );
+
+  if (!matches.length) {
+    dropdown.classList.add('hidden');
+    return;
+  }
+
+  dropdown.innerHTML = matches.map(s => `
+    <div onclick="selectStudent('${s.name.replace(/'/g, "\\'")}')">
+      <span class="font-medium">${s.name}</span>
+      <span class="text-gray-400 text-xs ml-2">${s.id}${s.dept ? ' · ' + s.dept : ''}</span>
+    </div>
+  `).join('');
+  dropdown.classList.remove('hidden');
+}
+
+function selectStudent(name) {
+  document.getElementById('studentName').value = name;
+  closeNameDropdown();
+}
+
+function closeNameDropdown() {
+  document.getElementById('nameDropdown').classList.add('hidden');
+}
+
+// ══════════════════════════════════════════════════════════════
+//  ATTENDANCE MARKING
+// ══════════════════════════════════════════════════════════════
 function markAttendance(type) {
   const nameInput = document.getElementById('studentName');
   const name = nameInput.value.trim();
 
   if (!name) {
-    alert('Please enter a student name before marking attendance.');
+    alert('Please enter or select a student name before marking attendance.');
     nameInput.focus();
     return;
+  }
+
+  // Validate: name must exist in student DB
+  const students = getData('students');
+  const registered = students.find(s => s.name.toLowerCase() === name.toLowerCase());
+  if (!registered) {
+    const proceed = confirm(`"${name}" is not in the Student Database.\n\nAdd them to the DB first, or click Cancel.`);
+    if (!proceed) return;
+    // Auto-add with minimal info
+    students.push({ name, id: 'AUTO-' + Date.now(), dept: '', email: '' });
+    setData('students', students);
+    updateStats();
   }
 
   const records = getData('attendance');
   const now = new Date();
   const today = now.toLocaleDateString('en-IN');
-  const time = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+  const time  = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 
-  // Prevent duplicate entry for same person same day
+  // Prevent duplicate
   const alreadyMarked = records.find(r =>
     r.name.toLowerCase() === name.toLowerCase() &&
     r.date === today &&
@@ -273,82 +425,120 @@ function markAttendance(type) {
     return;
   }
 
-  const image = captureFrame();
+  const image = captureFrame(); // may be null if camera is off — that's fine
+
   records.push({ name, date: today, time, type, image });
   setData('attendance', records);
 
   nameInput.value = '';
-  setStatus(`${type} marked for ${name}`, 'green');
+  setStatus(`✓ ${type} marked for ${name}`, 'green');
   renderAttendanceTable();
   updateStats();
 
   setTimeout(() => setStatus('Camera active', 'green'), 3000);
 }
 
+// ══════════════════════════════════════════════════════════════
+//  RENDER TODAY'S ATTENDANCE TABLE  (with photo column)
+// ══════════════════════════════════════════════════════════════
 function renderAttendanceTable() {
-  const records = getData('attendance');
-  const today = new Date().toLocaleDateString('en-IN');
-  const todayRecords = records.filter(r => r.date === today).reverse();
-  const tbody = document.getElementById('attendanceTable');
+  const records  = getData('attendance');
+  const today    = new Date().toLocaleDateString('en-IN');
+  const todayRec = records.filter(r => r.date === today).reverse();
+  const tbody    = document.getElementById('attendanceTable');
 
-  if (!todayRecords.length) {
-    tbody.innerHTML = '<tr><td colspan="3" class="text-gray-400 text-center py-6">No records yet</td></tr>';
+  if (!todayRec.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="text-gray-400 text-center py-6">No records yet today</td></tr>';
     return;
   }
 
-  tbody.innerHTML = todayRecords.map(r => `
+  tbody.innerHTML = todayRec.map(r => `
     <tr class="border-b hover:bg-gray-50">
-      <td class="py-2 font-medium">${r.name}</td>
+      <td class="py-2">
+        ${r.image
+          ? `<img src="${r.image}" class="thumb-img" onclick="openImgModal('${r.image}')" title="Click to enlarge">`
+          : `<span class="text-xs text-gray-300 italic">No photo</span>`}
+      </td>
+      <td class="py-2 font-medium">${escHtml(r.name)}</td>
       <td class="py-2 text-gray-500">${r.time}</td>
       <td class="py-2">
         <span class="px-2 py-1 rounded-full text-xs font-medium ${
-          r.type === 'IN'
-            ? 'bg-green-100 text-green-700'
-            : 'bg-red-100 text-red-700'
+          r.type === 'IN' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
         }">${r.type}</span>
       </td>
     </tr>
   `).join('');
 }
 
-function updateStats() {
-  const records = getData('attendance');
-  const students = getData('students');
-  const today = new Date().toLocaleDateString('en-IN');
-  const todayNames = [...new Set(records.filter(r => r.date === today && r.type === 'IN').map(r => r.name.toLowerCase()))];
-
-  document.getElementById('stat-present').textContent = todayNames.length;
-  document.getElementById('stat-total').textContent = students.length;
-  document.getElementById('stat-absent').textContent = Math.max(0, students.length - todayNames.length);
+function openImgModal(src) {
+  document.getElementById('imgModalSrc').src = src;
+  document.getElementById('imgModal').classList.add('open');
 }
 
-// ── STUDENT DB ────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+//  STATS
+// ══════════════════════════════════════════════════════════════
+function updateStats() {
+  const records  = getData('attendance');
+  const students = getData('students');
+  const today    = new Date().toLocaleDateString('en-IN');
+  const presentNames = new Set(
+    records.filter(r => r.date === today && r.type === 'IN').map(r => r.name.toLowerCase())
+  );
+
+  document.getElementById('stat-present').textContent = presentNames.size;
+  document.getElementById('stat-total').textContent   = students.length;
+  document.getElementById('stat-absent').textContent  = Math.max(0, students.length - presentNames.size);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  STUDENT DATABASE
+// ══════════════════════════════════════════════════════════════
 function showAddStudent() {
-  document.getElementById('addStudentForm').classList.toggle('hidden');
+  const form = document.getElementById('addStudentForm');
+  form.classList.toggle('hidden');
+  if (!form.classList.contains('hidden')) {
+    document.getElementById('newName').focus();
+  }
 }
 
 function addStudent() {
-  const name = document.getElementById('newName').value.trim();
-  const id = document.getElementById('newId').value.trim();
-  const dept = document.getElementById('newDept').value.trim();
+  const name  = document.getElementById('newName').value.trim();
+  const id    = document.getElementById('newId').value.trim();
+  const dept  = document.getElementById('newDept').value.trim();
   const email = document.getElementById('newEmail').value.trim();
 
-  if (!name || !id) { alert('Name and Student ID are required.'); return; }
+  if (!name || !id) {
+    alert('Name and Student ID are required fields.');
+    return;
+  }
 
   const students = getData('students');
-  if (students.find(s => s.id === id)) { alert('Student ID already exists.'); return; }
 
-  students.push({ name, id, dept, email });
+  if (students.find(s => s.id === id)) {
+    alert('A student with this ID already exists.');
+    return;
+  }
+  if (students.find(s => s.name.toLowerCase() === name.toLowerCase())) {
+    if (!confirm(`A student named "${name}" already exists. Add anyway?`)) return;
+  }
+
+  students.push({ name, id, dept, email, addedOn: new Date().toLocaleDateString('en-IN') });
   setData('students', students);
 
+  // Clear form
   ['newName','newId','newDept','newEmail'].forEach(f => document.getElementById(f).value = '');
   document.getElementById('addStudentForm').classList.add('hidden');
+
   renderStudentTable();
   updateStats();
+
+  // Flash confirmation
+  showToast(`✓ ${name} added to database`);
 }
 
 function deleteStudent(id) {
-  if (!confirm('Remove this student?')) return;
+  if (!confirm('Remove this student from the database?')) return;
   const students = getData('students').filter(s => s.id !== id);
   setData('students', students);
   renderStudentTable();
@@ -357,40 +547,51 @@ function deleteStudent(id) {
 
 function renderStudentTable() {
   const students = getData('students');
-  const records = getData('attendance');
-  const tbody = document.getElementById('studentTable');
+  const records  = getData('attendance');
+  const tbody    = document.getElementById('studentTable');
+  const dbEmpty  = document.getElementById('dbEmpty');
+  const dbTable  = document.getElementById('dbTable');
 
   if (!students.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="text-gray-400 text-center py-6">No students added yet</td></tr>';
+    dbEmpty.classList.remove('hidden');
+    dbTable.classList.add('hidden');
     return;
   }
 
+  dbEmpty.classList.add('hidden');
+  dbTable.classList.remove('hidden');
+
   tbody.innerHTML = students.map(s => {
-    const present = [...new Set(
+    const presentDays = new Set(
       records.filter(r => r.name.toLowerCase() === s.name.toLowerCase() && r.type === 'IN').map(r => r.date)
-    )].length;
+    ).size;
     return `
       <tr class="border-b hover:bg-gray-50">
-        <td class="py-2 font-medium">${s.name}</td>
-        <td class="py-2 text-gray-500">${s.id}</td>
-        <td class="py-2 text-gray-500">${s.dept || '—'}</td>
-        <td class="py-2"><span class="text-green-600 font-medium">${present}</span> days</td>
+        <td class="py-2 font-medium">${escHtml(s.name)}</td>
+        <td class="py-2 text-gray-500">${escHtml(s.id)}</td>
+        <td class="py-2 text-gray-500">${escHtml(s.dept || '—')}</td>
+        <td class="py-2 text-gray-400 text-xs">${escHtml(s.email || '—')}</td>
+        <td class="py-2"><span class="text-green-600 font-medium">${presentDays}</span> <span class="text-gray-400 text-xs">day${presentDays !== 1 ? 's' : ''}</span></td>
         <td class="py-2">
-          <button onclick="deleteStudent('${s.id}')"
-            class="text-red-500 hover:text-red-700 text-xs">Remove</button>
+          <button onclick="deleteStudent('${s.id.replace(/'/g,"\\'")}' )"
+            class="text-red-500 hover:text-red-700 text-xs border border-red-200 px-2 py-1 rounded hover:bg-red-50">
+            <i class="fas fa-trash-alt mr-1"></i>Remove
+          </button>
         </td>
       </tr>
     `;
   }).join('');
 }
 
-// ── REPORTS ───────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+//  REPORTS  (with photo thumbnails)
+// ══════════════════════════════════════════════════════════════
 function renderReports() {
   const records = getData('attendance');
   const div = document.getElementById('reportTable');
 
   if (!records.length) {
-    div.innerHTML = '<p class="text-gray-400 text-center py-6">No attendance records yet.</p>';
+    div.innerHTML = '<p class="text-gray-400 text-center py-8"><i class="fas fa-inbox text-4xl block mb-3"></i>No attendance records yet.</p>';
     return;
   }
 
@@ -401,21 +602,32 @@ function renderReports() {
   });
 
   div.innerHTML = Object.keys(grouped).sort().reverse().map(date => `
-    <div class="mb-6">
-      <h3 class="font-medium text-gray-700 mb-2 border-b pb-1">${date}</h3>
+    <div class="mb-8">
+      <h3 class="font-semibold text-gray-700 mb-2 border-b pb-1 flex items-center gap-2">
+        <i class="fas fa-calendar-day text-blue-400"></i>${date}
+        <span class="text-xs text-gray-400 font-normal">${grouped[date].length} record${grouped[date].length !== 1 ? 's' : ''}</span>
+      </h3>
       <table class="w-full text-sm">
-        <thead><tr class="text-xs text-gray-500">
-          <th class="text-left py-1">Name</th>
-          <th class="text-left py-1">Time</th>
-          <th class="text-left py-1">Type</th>
-        </tr></thead>
+        <thead>
+          <tr class="text-xs text-gray-500 bg-gray-50">
+            <th class="text-left py-2 px-2 rounded-l">Photo</th>
+            <th class="text-left py-2 px-2">Name</th>
+            <th class="text-left py-2 px-2">Time</th>
+            <th class="text-left py-2 px-2 rounded-r">Type</th>
+          </tr>
+        </thead>
         <tbody>
           ${grouped[date].map(r => `
-            <tr class="border-b">
-              <td class="py-1">${r.name}</td>
-              <td class="py-1 text-gray-500">${r.time}</td>
-              <td class="py-1">
-                <span class="px-2 py-0.5 rounded-full text-xs ${
+            <tr class="border-b hover:bg-gray-50">
+              <td class="py-2 px-2">
+                ${r.image
+                  ? `<img src="${r.image}" class="thumb-img" onclick="openImgModal('${r.image}')" title="Click to enlarge">`
+                  : `<span class="text-xs text-gray-300 italic">—</span>`}
+              </td>
+              <td class="py-2 px-2 font-medium">${escHtml(r.name)}</td>
+              <td class="py-2 px-2 text-gray-500">${r.time}</td>
+              <td class="py-2 px-2">
+                <span class="px-2 py-0.5 rounded-full text-xs font-medium ${
                   r.type === 'IN' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                 }">${r.type}</span>
               </td>
@@ -427,23 +639,60 @@ function renderReports() {
   `).join('');
 }
 
-// ── EXPORT CSV ────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+//  EXPORT CSV
+// ══════════════════════════════════════════════════════════════
 function exportCSV() {
   const records = getData('attendance');
   if (!records.length) { alert('No records to export.'); return; }
 
   const header = 'Name,Date,Time,Type\n';
-  const rows = records.map(r => `"${r.name}","${r.date}","${r.time}","${r.type}"`).join('\n');
-  const blob = new Blob([header + rows], { type: 'text/csv' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
+  const rows   = records.map(r => `"${r.name}","${r.date}","${r.time}","${r.type}"`).join('\n');
+  const blob   = new Blob([header + rows], { type: 'text/csv' });
+  const a      = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
   a.download = 'attendance_' + new Date().toLocaleDateString('en-IN').replace(/\//g, '-') + '.csv';
   a.click();
 }
 
-// ── INIT ──────────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+//  UTILITIES
+// ══════════════════════════════════════════════════════════════
+function escHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+function showToast(msg) {
+  let toast = document.getElementById('toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'toast';
+    toast.style.cssText = `
+      position:fixed;bottom:24px;right:24px;z-index:9999;
+      background:#1e3a5f;color:white;padding:12px 20px;
+      border-radius:10px;font-size:14px;
+      box-shadow:0 4px 16px rgba(0,0,0,0.2);
+      transition:opacity .3s;
+    `;
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => toast.style.opacity = '0', 2500);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════════════
 window.onload = () => {
   renderAttendanceTable();
+  renderStudentTable();
   updateStats();
 };
 </script>
