@@ -7,110 +7,90 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
-  body { font-family: 'Segoe UI', sans-serif; }
-  video { transform: scaleX(-1); }
-  canvas { transform: scaleX(-1); }
-  #videoWrap { position: relative; display: inline-block; width: 100%; }
-
-  /* Autocomplete dropdown */
-  #nameDropdown {
-    position: absolute;
-    z-index: 100;
-    background: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    max-height: 180px;
-    overflow-y: auto;
-    width: 100%;
-    top: 100%;
-    left: 0;
-  }
-  #nameDropdown div {
-    padding: 8px 12px;
-    cursor: pointer;
-    font-size: 14px;
-    color: #374151;
-  }
-  #nameDropdown div:hover { background: #eff6ff; color: #1d4ed8; }
-
-  .thumb-img {
-    width: 40px;
-    height: 40px;
-    object-fit: cover;
-    border-radius: 6px;
-    border: 1px solid #e5e7eb;
-    cursor: pointer;
-  }
-
-  /* Modal for full image */
-  #imgModal {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.75);
-    z-index: 999;
-    align-items: center;
-    justify-content: center;
-  }
-  #imgModal.open { display: flex; }
-  #imgModal img {
-    max-width: 90vw;
-    max-height: 85vh;
-    border-radius: 12px;
-    transform: scaleX(-1);
-  }
-
-  .pulse-dot {
-    animation: pulse 1.5s infinite;
-  }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
-  }
+body { font-family:'Segoe UI',sans-serif; }
+video { transform:scaleX(-1); }
+#videoWrap { position:relative; display:inline-block; width:100%; }
+#nameDropdown {
+  position:absolute; z-index:100; background:white;
+  border:1px solid #d1d5db; border-top:none;
+  border-radius:0 0 8px 8px;
+  box-shadow:0 6px 16px rgba(0,0,0,.1);
+  max-height:180px; overflow-y:auto;
+  width:100%; top:100%; left:0;
+}
+#nameDropdown .ddi {
+  padding:9px 14px; cursor:pointer; font-size:13px; color:#374151;
+  border-bottom:1px solid #f3f4f6;
+}
+#nameDropdown .ddi:hover { background:#eff6ff; color:#1d4ed8; }
+.timg {
+  width:44px; height:44px; object-fit:cover;
+  border-radius:6px; border:1px solid #e5e7eb;
+  cursor:pointer; transition:transform .15s;
+}
+.timg:hover { transform:scale(1.08); }
+#imgModal {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,.78); z-index:9999;
+  align-items:center; justify-content:center;
+}
+#imgModal.open { display:flex; }
+#imgModal img { max-width:88vw; max-height:84vh; border-radius:12px; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+.pulsing { animation:pulse 1.5s infinite; }
+#toast {
+  position:fixed; bottom:24px; right:24px; z-index:9998;
+  background:#1e3a5f; color:white; padding:12px 20px;
+  border-radius:10px; font-size:14px;
+  box-shadow:0 4px 16px rgba(0,0,0,.25);
+  opacity:0; transition:opacity .3s; pointer-events:none;
+  max-width:320px;
+}
+#toast.show { opacity:1; }
+.sb { display:inline-flex; align-items:center; font-size:11px; font-weight:600; padding:3px 9px; border-radius:99px; }
+.sin  { background:#dcfce7; color:#16a34a; }
+.sout { background:#fee2e2; color:#dc2626; }
+.sdone{ background:#dbeafe; color:#1d4ed8; }
+.swarn{ background:#fef9c3; color:#92400e; }
 </style>
 </head>
 <body class="bg-gray-100">
 
-<!-- Full-image modal -->
 <div id="imgModal" onclick="this.classList.remove('open')">
-  <img id="imgModalSrc" src="" alt="Captured photo">
+  <img id="imgModalSrc" src="" alt="photo">
 </div>
+<div id="toast"></div>
 
 <div class="flex h-screen">
-
-  <!-- SIDEBAR -->
-  <aside class="w-56 bg-[#003366] text-white flex flex-col p-5">
+  <aside class="w-56 bg-[#003366] text-white flex flex-col p-5 shrink-0">
     <h1 class="text-lg font-bold tracking-widest mb-8">SMART ATTEND</h1>
     <button onclick="showView('dashboard')" id="btn-dashboard"
-      class="nav-btn text-left px-3 py-2 rounded mb-2 bg-white/20 text-white text-sm">
+      class="text-left px-3 py-2 rounded mb-2 bg-white/20 text-white text-sm">
       <i class="fas fa-home mr-2"></i>Dashboard
     </button>
     <button onclick="showView('database')" id="btn-database"
-      class="nav-btn text-left px-3 py-2 rounded mb-2 text-white/70 hover:bg-white/10 text-sm">
+      class="text-left px-3 py-2 rounded mb-2 text-white/70 hover:bg-white/10 text-sm">
       <i class="fas fa-users mr-2"></i>Student DB
     </button>
     <button onclick="showView('reports')" id="btn-reports"
-      class="nav-btn text-left px-3 py-2 rounded mb-2 text-white/70 hover:bg-white/10 text-sm">
+      class="text-left px-3 py-2 rounded mb-2 text-white/70 hover:bg-white/10 text-sm">
       <i class="fas fa-chart-bar mr-2"></i>Reports
     </button>
     <div class="mt-auto text-xs text-white/40">
       <div>Storage: LocalStorage</div>
-      <div id="syncStatus" class="text-green-300 mt-1">✓ Ready</div>
+      <div id="syncStatus" class="text-green-300 mt-1">Ready</div>
     </div>
   </aside>
 
-  <!-- CONTENT -->
   <main class="flex-1 overflow-auto p-6">
 
-    <!-- DASHBOARD VIEW -->
+    <!-- DASHBOARD -->
     <div id="view-dashboard">
-
-      <!-- Stats -->
       <div class="grid grid-cols-3 gap-4 mb-6">
         <div class="bg-white rounded-xl p-4 text-center shadow-sm">
-          <div class="text-xs text-gray-500 mb-1">Present Today</div>
+          <div class="text-xs text-gray-500 mb-1">Fully Present Today</div>
           <div id="stat-present" class="text-3xl font-semibold text-green-600">0</div>
+          <div class="text-xs text-gray-400 mt-1">Entry + Exit both</div>
         </div>
         <div class="bg-white rounded-xl p-4 text-center shadow-sm">
           <div class="text-xs text-gray-500 mb-1">Absent Today</div>
@@ -123,132 +103,128 @@
       </div>
 
       <div class="grid grid-cols-2 gap-6">
-
-        <!-- Camera Card -->
         <div class="bg-white rounded-xl p-5 shadow-sm">
-          <h2 class="font-semibold text-gray-700 mb-3">Live Camera</h2>
-
-          <div id="statusBar" class="flex items-center gap-2 text-sm bg-gray-50 rounded-lg px-3 py-2 mb-3">
+          <h2 class="font-semibold text-gray-700 mb-3">Mark Attendance</h2>
+          <div class="flex items-center gap-2 text-sm bg-gray-50 rounded-lg px-3 py-2 mb-3">
             <span id="statusDot" class="inline-block w-2 h-2 rounded-full bg-gray-400"></span>
             <span id="statusText">Camera off</span>
           </div>
-
-          <div id="videoWrap" class="rounded-lg overflow-hidden bg-black w-full h-48 flex items-center justify-center mb-3">
+          <div id="videoWrap" class="rounded-lg overflow-hidden bg-gray-900 w-full h-48 flex items-center justify-center mb-3">
             <video id="video" class="w-full h-full object-cover hidden" autoplay muted playsinline></video>
-            <span id="camPlaceholder" class="text-gray-500 text-sm"><i class="fas fa-camera mr-1"></i>Click Start Camera</span>
+            <span id="camPlaceholder" class="text-gray-400 text-sm text-center">
+              <i class="fas fa-camera text-2xl block mb-2 opacity-40"></i>Click Start Camera
+            </span>
           </div>
-
-          <!-- Name input with autocomplete dropdown -->
           <div class="relative mb-3">
-            <input id="studentName"
-              placeholder="Type or select student name…"
+            <input id="studentName" placeholder="Type or select student name..."
               autocomplete="off"
-              oninput="filterNameDropdown()"
-              onfocus="filterNameDropdown()"
-              onblur="setTimeout(closeNameDropdown, 200)"
+              oninput="filterDD(this.value)"
+              onfocus="filterDD(this.value)"
+              onkeydown="ddKey(event)"
               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
-            <div id="nameDropdown" class="hidden"></div>
+            <div id="nameDropdown" style="display:none;"></div>
           </div>
-
-          <div class="flex gap-2">
+          <div class="flex gap-2 mb-3">
             <button onclick="startCamera()"
-              class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm px-3 py-2 rounded-lg transition">
+              class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm px-3 py-2 rounded-lg">
               <i class="fas fa-camera mr-1"></i>Start Camera
             </button>
-            <button onclick="markAttendance('IN')"
-              class="flex-1 bg-green-500 hover:bg-green-600 text-white text-sm px-3 py-2 rounded-lg transition">
+            <button onclick="markAtt('IN')"
+              class="flex-1 bg-green-500 hover:bg-green-600 text-white text-sm px-3 py-2 rounded-lg">
               <i class="fas fa-sign-in-alt mr-1"></i>Entry
             </button>
-            <button onclick="markAttendance('OUT')"
-              class="flex-1 bg-red-500 hover:bg-red-600 text-white text-sm px-3 py-2 rounded-lg transition">
+            <button onclick="markAtt('OUT')"
+              class="flex-1 bg-red-500 hover:bg-red-600 text-white text-sm px-3 py-2 rounded-lg">
               <i class="fas fa-sign-out-alt mr-1"></i>Exit
             </button>
+          </div>
+          <div class="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-700">
+            <i class="fas fa-info-circle mr-1"></i>
+            Both <strong>Entry AND Exit</strong> required to count as Present.
           </div>
           <canvas id="canvas" class="hidden"></canvas>
         </div>
 
-        <!-- Today's Log -->
-        <div class="bg-white rounded-xl p-5 shadow-sm">
+        <div class="bg-white rounded-xl p-5 shadow-sm flex flex-col">
           <div class="flex justify-between items-center mb-3">
             <h2 class="font-semibold text-gray-700">Today's Log</h2>
             <button onclick="exportCSV()"
-              class="text-xs text-blue-600 border border-blue-200 rounded px-2 py-1 hover:bg-blue-50">
-              Export CSV
-            </button>
+              class="text-xs text-blue-600 border border-blue-200 rounded px-2 py-1 hover:bg-blue-50">Export CSV</button>
           </div>
-          <div class="overflow-auto max-h-72">
+          <div class="overflow-auto flex-1">
             <table class="w-full text-sm">
-              <thead>
-                <tr class="text-xs text-gray-500 border-b">
-                  <th class="text-left py-2">Photo</th>
-                  <th class="text-left py-2">Name</th>
-                  <th class="text-left py-2">Time</th>
-                  <th class="text-left py-2">Type</th>
-                </tr>
-              </thead>
+              <thead><tr class="text-xs text-gray-400 border-b">
+                <th class="text-left py-2">Photo</th>
+                <th class="text-left py-2">Name</th>
+                <th class="text-left py-2">Time</th>
+                <th class="text-left py-2">Type</th>
+                <th class="text-left py-2">Status</th>
+              </tr></thead>
               <tbody id="attendanceTable">
-                <tr><td colspan="4" class="text-gray-400 text-center py-6">No records yet</td></tr>
+                <tr><td colspan="5" class="text-gray-300 text-center py-8">No records yet</td></tr>
               </tbody>
             </table>
           </div>
         </div>
-
       </div>
     </div>
 
-    <!-- DATABASE VIEW -->
+    <!-- DATABASE -->
     <div id="view-database" class="hidden">
       <div class="bg-white rounded-xl p-6 shadow-sm">
         <div class="flex justify-between items-center mb-4">
-          <h2 class="font-semibold text-gray-700">Student Database</h2>
-          <button onclick="showAddStudent()"
+          <h2 class="font-semibold text-gray-700 text-lg">Student Database</h2>
+          <button onclick="toggleAddForm()"
             class="bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700">
-            + Add Student
+            <i class="fas fa-user-plus mr-1"></i>Add Student
           </button>
         </div>
-
-        <!-- Add Student Form -->
-        <div id="addStudentForm" class="hidden bg-gray-50 rounded-lg p-4 mb-4 border border-gray-200">
-          <p class="text-xs text-gray-500 mb-3">All registered students will appear in the attendance dropdown on the Dashboard.</p>
+        <div id="addForm" style="display:none;" class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-5">
+          <p class="text-xs text-blue-600 mb-3">
+            <i class="fas fa-info-circle mr-1"></i>Students added here will appear in the Dashboard name dropdown.
+          </p>
           <div class="grid grid-cols-2 gap-3">
-            <input id="newName" placeholder="Full Name *" class="border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
-            <input id="newId" placeholder="Student ID / Roll No. *" class="border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
-            <input id="newDept" placeholder="Department" class="border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
-            <input id="newEmail" placeholder="Email (optional)" class="border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+            <input id="fName"  placeholder="Full Name *"
+              class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-300" />
+            <input id="fId"    placeholder="Roll No. / Student ID *"
+              class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-300" />
+            <input id="fDept"  placeholder="Department"
+              class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-300" />
+            <input id="fEmail" placeholder="Email (optional)"
+              class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-300" />
           </div>
           <div class="flex gap-2 mt-3">
-            <button onclick="addStudent()" class="bg-green-500 hover:bg-green-600 text-white text-sm px-4 py-2 rounded-lg"><i class="fas fa-save mr-1"></i>Save Student</button>
-            <button onclick="document.getElementById('addStudentForm').classList.add('hidden')"
-              class="bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm px-4 py-2 rounded-lg">Cancel</button>
+            <button onclick="addStudent()"
+              class="bg-green-500 hover:bg-green-600 text-white text-sm px-5 py-2 rounded-lg font-medium">
+              <i class="fas fa-save mr-1"></i>Save Student
+            </button>
+            <button onclick="document.getElementById('addForm').style.display='none'"
+              class="bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm px-4 py-2 rounded-lg">Cancel</button>
           </div>
         </div>
-
-        <div id="dbEmpty" class="hidden text-center py-8 text-gray-400">
-          <i class="fas fa-users text-4xl mb-3 block"></i>
-          No students added yet. Click "+ Add Student" to begin.
-        </div>
-
-        <table class="w-full text-sm" id="dbTable">
-          <thead>
-            <tr class="text-xs text-gray-500 border-b">
-              <th class="text-left py-2">Name</th>
-              <th class="text-left py-2">ID</th>
-              <th class="text-left py-2">Department</th>
-              <th class="text-left py-2">Email</th>
-              <th class="text-left py-2">Total Present</th>
-              <th class="text-left py-2">Action</th>
-            </tr>
-          </thead>
+        <p id="dbEmpty" style="display:none;" class="text-center text-gray-400 py-10">
+          <i class="fas fa-users text-4xl block mb-3 opacity-30"></i>
+          No students yet. Click "Add Student" above.
+        </p>
+        <table id="dbTableEl" style="display:none;" class="w-full text-sm">
+          <thead><tr class="text-xs text-gray-400 border-b">
+            <th class="text-left py-2">#</th>
+            <th class="text-left py-2">Name</th>
+            <th class="text-left py-2">Roll No.</th>
+            <th class="text-left py-2">Department</th>
+            <th class="text-left py-2">Days Present</th>
+            <th class="text-left py-2">Action</th>
+          </tr></thead>
           <tbody id="studentTable"></tbody>
         </table>
       </div>
     </div>
 
-    <!-- REPORTS VIEW -->
+    <!-- REPORTS -->
     <div id="view-reports" class="hidden">
       <div class="bg-white rounded-xl p-6 shadow-sm">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="font-semibold text-gray-700">Attendance Report</h2>
+        <div class="flex justify-between items-center mb-5">
+          <h2 class="font-semibold text-gray-700 text-lg">Attendance Reports</h2>
           <button onclick="exportCSV()"
             class="bg-green-500 text-white text-sm px-4 py-2 rounded-lg hover:bg-green-600">
             <i class="fas fa-download mr-1"></i>Download CSV
@@ -262,439 +238,471 @@
 </div>
 
 <script>
-// ══════════════════════════════════════════════════════════════
-//  STORAGE HELPERS
-// ══════════════════════════════════════════════════════════════
-function getData(key) {
-  try { return JSON.parse(localStorage.getItem(key)) || []; }
-  catch { return []; }
+/* ─── STORAGE ───────────────────────────────────────────── */
+function getData(k){
+  try{ return JSON.parse(localStorage.getItem(k))||[]; }catch(e){ return []; }
 }
-function setData(key, val) {
-  try {
-    localStorage.setItem(key, JSON.stringify(val));
-    document.getElementById('syncStatus').textContent = '✓ Saved';
-    setTimeout(() => document.getElementById('syncStatus').textContent = '✓ Ready', 1500);
-  } catch(e) {
-    document.getElementById('syncStatus').textContent = '⚠ Storage full!';
+function setData(k,v){
+  try{
+    localStorage.setItem(k,JSON.stringify(v));
+    var el=document.getElementById('syncStatus');
+    if(el){ el.textContent='Saved'; setTimeout(function(){ el.textContent='Ready'; },1500); }
+  }catch(e){
+    alert('Storage full! Export your data then clear old records.');
   }
 }
 
-// ══════════════════════════════════════════════════════════════
-//  NAVIGATION
-// ══════════════════════════════════════════════════════════════
-let currentView = 'dashboard';
-
-function showView(name) {
-  ['dashboard','database','reports'].forEach(v => {
-    document.getElementById('view-' + v).classList.add('hidden');
-    const btn = document.getElementById('btn-' + v);
-    btn.classList.remove('bg-white/20');
-    btn.classList.add('text-white/70');
+/* ─── NAV ───────────────────────────────────────────────── */
+function showView(name){
+  ['dashboard','database','reports'].forEach(function(v){
+    document.getElementById('view-'+v).classList.add('hidden');
+    var b=document.getElementById('btn-'+v);
+    b.classList.remove('bg-white/20','text-white');
+    b.classList.add('text-white/70');
   });
-  document.getElementById('view-' + name).classList.remove('hidden');
-  const btn = document.getElementById('btn-' + name);
-  btn.classList.add('bg-white/20');
-  btn.classList.remove('text-white/70');
-  currentView = name;
-
-  if (name === 'database') renderStudentTable();
-  if (name === 'reports')  renderReports();
-  if (name === 'dashboard') { renderAttendanceTable(); updateStats(); }
+  document.getElementById('view-'+name).classList.remove('hidden');
+  var b=document.getElementById('btn-'+name);
+  b.classList.add('bg-white/20','text-white');
+  b.classList.remove('text-white/70');
+  if(name==='database'){ renderStudentTable(); }
+  if(name==='reports'){  renderReports(); }
+  if(name==='dashboard'){ renderAttendanceTable(); updateStats(); }
 }
 
-// ══════════════════════════════════════════════════════════════
-//  CAMERA
-// ══════════════════════════════════════════════════════════════
-let cameraStream = null;
-
-async function startCamera() {
-  try {
-    if (cameraStream) {
-      cameraStream.getTracks().forEach(t => t.stop());
-    }
-    cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-    const video = document.getElementById('video');
-    video.srcObject = cameraStream;
-    video.classList.remove('hidden');
-    document.getElementById('camPlaceholder').classList.add('hidden');
-    setStatus('Camera active', 'green');
-  } catch(e) {
-    setStatus('Camera permission denied', 'red');
-    alert('Please allow camera access in your browser settings and reload the page.');
+/* ─── CAMERA ────────────────────────────────────────────── */
+var camStream=null;
+function startCamera(){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    showToast('Camera API not available on this browser.','warn'); return;
   }
+  if(camStream){ camStream.getTracks().forEach(function(t){ t.stop(); }); }
+  navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:640,height:480}})
+    .then(function(stream){
+      camStream=stream;
+      var v=document.getElementById('video');
+      v.srcObject=stream;
+      v.onloadedmetadata=function(){ v.play(); };
+      v.classList.remove('hidden');
+      document.getElementById('camPlaceholder').classList.add('hidden');
+      setStatus('Camera active','green');
+    })
+    .catch(function(err){
+      console.error(err);
+      setStatus('Camera blocked','red');
+      alert('Camera access denied.\n\nClick the camera/lock icon in the address bar, allow access, then reload.');
+    });
 }
-
-function setStatus(msg, color) {
-  document.getElementById('statusText').textContent = msg;
-  const dot = document.getElementById('statusDot');
-  dot.className = 'inline-block w-2 h-2 rounded-full';
-  if (color === 'green') { dot.classList.add('bg-green-500', 'pulse-dot'); }
-  else if (color === 'red') { dot.classList.add('bg-red-500'); }
-  else { dot.classList.add('bg-gray-400'); }
+function setStatus(msg,color){
+  document.getElementById('statusText').textContent=msg;
+  var d=document.getElementById('statusDot');
+  d.className='inline-block w-2 h-2 rounded-full';
+  if(color==='green') d.classList.add('bg-green-500','pulsing');
+  else if(color==='red') d.classList.add('bg-red-500');
+  else d.classList.add('bg-gray-400');
 }
-
-function captureFrame() {
-  const video = document.getElementById('video');
-  const canvas = document.getElementById('canvas');
-  if (!video || video.videoWidth === 0) return null;
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  // Draw mirrored (since video CSS is mirrored, canvas should match real orientation)
-  const ctx = canvas.getContext('2d');
+function captureFrame(){
+  var v=document.getElementById('video');
+  var c=document.getElementById('canvas');
+  if(!v||v.readyState<2||!v.videoWidth||v.videoWidth===0) return null;
+  c.width=v.videoWidth; c.height=v.videoHeight;
+  var ctx=c.getContext('2d');
   ctx.save();
-  ctx.scale(-1, 1);
-  ctx.drawImage(video, -canvas.width, 0);
+  ctx.translate(c.width,0); ctx.scale(-1,1);
+  ctx.drawImage(v,0,0,c.width,c.height);
   ctx.restore();
-  return canvas.toDataURL('image/jpeg', 0.6);
+  try{ return c.toDataURL('image/jpeg',0.45); }catch(e){ return null; }
 }
 
-// ══════════════════════════════════════════════════════════════
-//  NAME AUTOCOMPLETE DROPDOWN
-// ══════════════════════════════════════════════════════════════
-function filterNameDropdown() {
-  const input = document.getElementById('studentName');
-  const dropdown = document.getElementById('nameDropdown');
-  const query = input.value.trim().toLowerCase();
-  const students = getData('students');
+/* ─── DROPDOWN ──────────────────────────────────────────── */
+var ddSel=-1;
+function filterDD(q){
+  var dd=document.getElementById('nameDropdown');
+  var students=getData('students');
+  q=(q||'').trim().toLowerCase();
+  var matches=q
+    ? students.filter(function(s){ return s.name.toLowerCase().indexOf(q)>=0; })
+    : students;
+  if(!matches.length){ dd.style.display='none'; return; }
+  var html='';
+  for(var i=0;i<matches.length;i++){
+    var s=matches[i];
+    var safeN=s.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    html+='<div class="ddi" onmousedown="pickName(\''+safeN+'\')">'+
+      '<span class="font-medium">'+eh(s.name)+'</span>'+
+      '<span class="text-gray-400 text-xs ml-2">'+eh(s.id)+(s.dept?' · '+eh(s.dept):'')+' </span>'+
+    '</div>';
+  }
+  dd.innerHTML=html;
+  dd.style.display='block';
+  ddSel=-1;
+}
+function pickName(name){
+  document.getElementById('studentName').value=name;
+  document.getElementById('nameDropdown').style.display='none';
+}
+function ddKey(e){
+  var dd=document.getElementById('nameDropdown');
+  var items=dd.querySelectorAll('.ddi');
+  if(e.key==='Escape'){ dd.style.display='none'; return; }
+  if(e.key==='ArrowDown') ddSel=Math.min(ddSel+1,items.length-1);
+  else if(e.key==='ArrowUp') ddSel=Math.max(ddSel-1,0);
+  else if(e.key==='Enter'&&ddSel>=0){ e.preventDefault(); items[ddSel].dispatchEvent(new MouseEvent('mousedown')); return; }
+  else return;
+  items.forEach(function(el,i){ el.style.background=i===ddSel?'#eff6ff':''; });
+}
+document.addEventListener('click',function(e){
+  if(!e.target.closest('#studentName')&&!e.target.closest('#nameDropdown')){
+    var dd=document.getElementById('nameDropdown');
+    if(dd) dd.style.display='none';
+  }
+});
 
-  const matches = students.filter(s =>
-    s.name.toLowerCase().includes(query)
-  );
+/* ─── MARK ATTENDANCE ───────────────────────────────────── */
+function markAtt(type){
+  var inp=document.getElementById('studentName');
+  var raw=(inp.value||'').trim();
+  if(!raw){ showToast('Please type or select a student name.','warn'); inp.focus(); return; }
 
-  if (!matches.length) {
-    dropdown.classList.add('hidden');
+  var students=getData('students');
+  var match=null;
+  for(var i=0;i<students.length;i++){
+    if(students[i].name.toLowerCase()===raw.toLowerCase()){ match=students[i]; break; }
+  }
+  if(!match){
+    showToast('"'+raw+'" not found in Student DB. Add them first via Student DB tab.','warn');
     return;
   }
 
-  dropdown.innerHTML = matches.map(s => `
-    <div onclick="selectStudent('${s.name.replace(/'/g, "\\'")}')">
-      <span class="font-medium">${s.name}</span>
-      <span class="text-gray-400 text-xs ml-2">${s.id}${s.dept ? ' · ' + s.dept : ''}</span>
-    </div>
-  `).join('');
-  dropdown.classList.remove('hidden');
-}
+  var name=match.name;
+  var records=getData('attendance');
+  var now=new Date();
+  var today=now.toLocaleDateString('en-IN');
+  var time=now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
 
-function selectStudent(name) {
-  document.getElementById('studentName').value = name;
-  closeNameDropdown();
-}
-
-function closeNameDropdown() {
-  document.getElementById('nameDropdown').classList.add('hidden');
-}
-
-// ══════════════════════════════════════════════════════════════
-//  ATTENDANCE MARKING
-// ══════════════════════════════════════════════════════════════
-function markAttendance(type) {
-  const nameInput = document.getElementById('studentName');
-  const name = nameInput.value.trim();
-
-  if (!name) {
-    alert('Please enter or select a student name before marking attendance.');
-    nameInput.focus();
+  var dup=false;
+  for(var i=0;i<records.length;i++){
+    if(records[i].name.toLowerCase()===name.toLowerCase()&&records[i].date===today&&records[i].type===type){
+      dup=true; break;
+    }
+  }
+  if(dup){
+    showToast(name+' already marked '+(type==='IN'?'Entry':'Exit')+' today.','warn');
     return;
   }
 
-  // Validate: name must exist in student DB
-  const students = getData('students');
-  const registered = students.find(s => s.name.toLowerCase() === name.toLowerCase());
-  if (!registered) {
-    const proceed = confirm(`"${name}" is not in the Student Database.\n\nAdd them to the DB first, or click Cancel.`);
-    if (!proceed) return;
-    // Auto-add with minimal info
-    students.push({ name, id: 'AUTO-' + Date.now(), dept: '', email: '' });
-    setData('students', students);
-    updateStats();
+  if(type==='OUT'){
+    var hasIn=false;
+    for(var i=0;i<records.length;i++){
+      if(records[i].name.toLowerCase()===name.toLowerCase()&&records[i].date===today&&records[i].type==='IN'){
+        hasIn=true; break;
+      }
+    }
+    if(!hasIn){
+      showToast(name+' has not marked Entry yet! Entry must come before Exit.','warn');
+      return;
+    }
   }
 
-  const records = getData('attendance');
-  const now = new Date();
-  const today = now.toLocaleDateString('en-IN');
-  const time  = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+  var img=captureFrame();
+  records.push({name:name,date:today,time:time,type:type,image:img});
+  setData('attendance',records);
 
-  // Prevent duplicate
-  const alreadyMarked = records.find(r =>
-    r.name.toLowerCase() === name.toLowerCase() &&
-    r.date === today &&
-    r.type === type
-  );
-  if (alreadyMarked) {
-    alert(`${name} has already been marked ${type} today.`);
-    return;
+  inp.value='';
+  document.getElementById('nameDropdown').style.display='none';
+
+  var allToday=records.filter(function(r){ return r.name.toLowerCase()===name.toLowerCase()&&r.date===today; });
+  var hasIN=allToday.some(function(r){ return r.type==='IN'; });
+  var hasOUT=allToday.some(function(r){ return r.type==='OUT'; });
+
+  if(hasIN&&hasOUT){
+    showToast('COMPLETE! '+name+' — Entry + Exit both marked. Counted as Present.','success');
+  } else if(type==='IN'){
+    showToast('Entry marked for '+name+'. Please mark Exit when leaving.');
+  } else {
+    showToast('Exit marked for '+name+'.');
   }
 
-  const image = captureFrame(); // may be null if camera is off — that's fine
+  if(!img) showToast('Camera was off — no photo captured. Start camera first next time.','warn');
 
-  records.push({ name, date: today, time, type, image });
-  setData('attendance', records);
+  setStatus((type==='IN'?'Entry':'Exit')+' marked for '+name,'green');
+  setTimeout(function(){ setStatus('Camera active','green'); },3000);
 
-  nameInput.value = '';
-  setStatus(`✓ ${type} marked for ${name}`, 'green');
   renderAttendanceTable();
   updateStats();
-
-  setTimeout(() => setStatus('Camera active', 'green'), 3000);
 }
 
-// ══════════════════════════════════════════════════════════════
-//  RENDER TODAY'S ATTENDANCE TABLE  (with photo column)
-// ══════════════════════════════════════════════════════════════
-function renderAttendanceTable() {
-  const records  = getData('attendance');
-  const today    = new Date().toLocaleDateString('en-IN');
-  const todayRec = records.filter(r => r.date === today).reverse();
-  const tbody    = document.getElementById('attendanceTable');
-
-  if (!todayRec.length) {
-    tbody.innerHTML = '<tr><td colspan="4" class="text-gray-400 text-center py-6">No records yet today</td></tr>';
+/* ─── TODAY TABLE ───────────────────────────────────────── */
+function renderAttendanceTable(){
+  var records=getData('attendance');
+  var today=new Date().toLocaleDateString('en-IN');
+  var todayRec=[];
+  for(var i=records.length-1;i>=0;i--){
+    if(records[i].date===today) todayRec.push(records[i]);
+  }
+  var tbody=document.getElementById('attendanceTable');
+  if(!todayRec.length){
+    tbody.innerHTML='<tr><td colspan="5" class="text-gray-300 text-center py-8">No records yet today</td></tr>';
     return;
   }
-
-  tbody.innerHTML = todayRec.map(r => `
-    <tr class="border-b hover:bg-gray-50">
-      <td class="py-2">
-        ${r.image
-          ? `<img src="${r.image}" class="thumb-img" onclick="openImgModal('${r.image}')" title="Click to enlarge">`
-          : `<span class="text-xs text-gray-300 italic">No photo</span>`}
-      </td>
-      <td class="py-2 font-medium">${escHtml(r.name)}</td>
-      <td class="py-2 text-gray-500">${r.time}</td>
-      <td class="py-2">
-        <span class="px-2 py-1 rounded-full text-xs font-medium ${
-          r.type === 'IN' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-        }">${r.type}</span>
-      </td>
-    </tr>
-  `).join('');
+  var sm={};
+  for(var i=0;i<todayRec.length;i++){
+    var k=todayRec[i].name.toLowerCase();
+    if(!sm[k]) sm[k]={hasIn:false,hasOut:false};
+    if(todayRec[i].type==='IN') sm[k].hasIn=true;
+    if(todayRec[i].type==='OUT') sm[k].hasOut=true;
+  }
+  var html='';
+  for(var i=0;i<todayRec.length;i++){
+    var r=todayRec[i];
+    var s=sm[r.name.toLowerCase()];
+    var badge=(s.hasIn&&s.hasOut)
+      ?'<span class="sb sdone">Present</span>'
+      :(r.type==='IN'
+        ?'<span class="sb swarn">Exit pending</span>'
+        :'<span class="sb swarn">No Entry yet</span>');
+    var photo=r.image
+      ?'<img src="'+r.image+'" class="timg" onclick="openModal(this.src)" title="Enlarge">'
+      :'<span class="text-xs text-gray-300">No photo</span>';
+    html+='<tr class="border-b hover:bg-gray-50">'+
+      '<td class="py-2">'+photo+'</td>'+
+      '<td class="py-2 font-medium text-gray-800">'+eh(r.name)+'</td>'+
+      '<td class="py-2 text-gray-500 text-xs">'+r.time+'</td>'+
+      '<td class="py-2"><span class="sb '+(r.type==='IN'?'sin':'sout')+'">'+(r.type==='IN'?'Entry':'Exit')+'</span></td>'+
+      '<td class="py-2">'+badge+'</td>'+
+    '</tr>';
+  }
+  tbody.innerHTML=html;
 }
-
-function openImgModal(src) {
-  document.getElementById('imgModalSrc').src = src;
+function openModal(src){
+  document.getElementById('imgModalSrc').src=src;
   document.getElementById('imgModal').classList.add('open');
 }
 
-// ══════════════════════════════════════════════════════════════
-//  STATS
-// ══════════════════════════════════════════════════════════════
-function updateStats() {
-  const records  = getData('attendance');
-  const students = getData('students');
-  const today    = new Date().toLocaleDateString('en-IN');
-  const presentNames = new Set(
-    records.filter(r => r.date === today && r.type === 'IN').map(r => r.name.toLowerCase())
-  );
-
-  document.getElementById('stat-present').textContent = presentNames.size;
-  document.getElementById('stat-total').textContent   = students.length;
-  document.getElementById('stat-absent').textContent  = Math.max(0, students.length - presentNames.size);
+/* ─── STATS ─────────────────────────────────────────────── */
+function updateStats(){
+  var records=getData('attendance');
+  var students=getData('students');
+  var today=new Date().toLocaleDateString('en-IN');
+  var todayRec=records.filter(function(r){ return r.date===today; });
+  var present=0;
+  for(var i=0;i<students.length;i++){
+    var n=students[i].name.toLowerCase();
+    var hasIn=false,hasOut=false;
+    for(var j=0;j<todayRec.length;j++){
+      if(todayRec[j].name.toLowerCase()===n){
+        if(todayRec[j].type==='IN') hasIn=true;
+        if(todayRec[j].type==='OUT') hasOut=true;
+      }
+    }
+    if(hasIn&&hasOut) present++;
+  }
+  document.getElementById('stat-present').textContent=present;
+  document.getElementById('stat-total').textContent=students.length;
+  document.getElementById('stat-absent').textContent=Math.max(0,students.length-present);
 }
 
-// ══════════════════════════════════════════════════════════════
-//  STUDENT DATABASE
-// ══════════════════════════════════════════════════════════════
-function showAddStudent() {
-  const form = document.getElementById('addStudentForm');
-  form.classList.toggle('hidden');
-  if (!form.classList.contains('hidden')) {
-    document.getElementById('newName').focus();
-  }
+/* ─── ADD STUDENT ───────────────────────────────────────── */
+function toggleAddForm(){
+  var f=document.getElementById('addForm');
+  var showing=f.style.display==='block';
+  f.style.display=showing?'none':'block';
+  if(!showing) setTimeout(function(){ document.getElementById('fName').focus(); },50);
 }
-
-function addStudent() {
-  const name  = document.getElementById('newName').value.trim();
-  const id    = document.getElementById('newId').value.trim();
-  const dept  = document.getElementById('newDept').value.trim();
-  const email = document.getElementById('newEmail').value.trim();
-
-  if (!name || !id) {
-    alert('Name and Student ID are required fields.');
-    return;
+function addStudent(){
+  var name=(document.getElementById('fName').value||'').trim();
+  var id  =(document.getElementById('fId').value||'').trim();
+  var dept=(document.getElementById('fDept').value||'').trim();
+  var email=(document.getElementById('fEmail').value||'').trim();
+  if(!name){ showToast('Full Name is required.','warn'); document.getElementById('fName').focus(); return; }
+  if(!id){   showToast('Roll No. is required.','warn');  document.getElementById('fId').focus();   return; }
+  var students=getData('students');
+  for(var i=0;i<students.length;i++){
+    if(students[i].id.toLowerCase()===id.toLowerCase()){
+      showToast('Student ID "'+id+'" already exists.','warn'); return;
+    }
   }
-
-  const students = getData('students');
-
-  if (students.find(s => s.id === id)) {
-    alert('A student with this ID already exists.');
-    return;
+  var nameDup=false;
+  for(var i=0;i<students.length;i++){
+    if(students[i].name.toLowerCase()===name.toLowerCase()){ nameDup=true; break; }
   }
-  if (students.find(s => s.name.toLowerCase() === name.toLowerCase())) {
-    if (!confirm(`A student named "${name}" already exists. Add anyway?`)) return;
-  }
-
-  students.push({ name, id, dept, email, addedOn: new Date().toLocaleDateString('en-IN') });
-  setData('students', students);
-
-  // Clear form
-  ['newName','newId','newDept','newEmail'].forEach(f => document.getElementById(f).value = '');
-  document.getElementById('addStudentForm').classList.add('hidden');
-
+  if(nameDup&&!confirm('A student named "'+name+'" already exists. Add anyway?')) return;
+  students.push({name:name,id:id,dept:dept,email:email});
+  setData('students',students);
+  ['fName','fId','fDept','fEmail'].forEach(function(f){ document.getElementById(f).value=''; });
+  document.getElementById('addForm').style.display='none';
   renderStudentTable();
   updateStats();
-
-  // Flash confirmation
-  showToast(`✓ ${name} added to database`);
+  showToast('"'+name+'" added to Student Database!','success');
 }
-
-function deleteStudent(id) {
-  if (!confirm('Remove this student from the database?')) return;
-  const students = getData('students').filter(s => s.id !== id);
-  setData('students', students);
+function deleteStudent(id){
+  if(!confirm('Remove this student?')) return;
+  var students=getData('students').filter(function(s){ return s.id!==id; });
+  setData('students',students);
   renderStudentTable();
   updateStats();
 }
 
-function renderStudentTable() {
-  const students = getData('students');
-  const records  = getData('attendance');
-  const tbody    = document.getElementById('studentTable');
-  const dbEmpty  = document.getElementById('dbEmpty');
-  const dbTable  = document.getElementById('dbTable');
-
-  if (!students.length) {
-    dbEmpty.classList.remove('hidden');
-    dbTable.classList.add('hidden');
-    return;
+/* ─── STUDENT TABLE ─────────────────────────────────────── */
+function renderStudentTable(){
+  var students=getData('students');
+  var records=getData('attendance');
+  var tbody=document.getElementById('studentTable');
+  var emptyEl=document.getElementById('dbEmpty');
+  var tableEl=document.getElementById('dbTableEl');
+  if(!students.length){
+    emptyEl.style.display='block'; tableEl.style.display='none'; return;
   }
-
-  dbEmpty.classList.add('hidden');
-  dbTable.classList.remove('hidden');
-
-  tbody.innerHTML = students.map(s => {
-    const presentDays = new Set(
-      records.filter(r => r.name.toLowerCase() === s.name.toLowerCase() && r.type === 'IN').map(r => r.date)
-    ).size;
-    return `
-      <tr class="border-b hover:bg-gray-50">
-        <td class="py-2 font-medium">${escHtml(s.name)}</td>
-        <td class="py-2 text-gray-500">${escHtml(s.id)}</td>
-        <td class="py-2 text-gray-500">${escHtml(s.dept || '—')}</td>
-        <td class="py-2 text-gray-400 text-xs">${escHtml(s.email || '—')}</td>
-        <td class="py-2"><span class="text-green-600 font-medium">${presentDays}</span> <span class="text-gray-400 text-xs">day${presentDays !== 1 ? 's' : ''}</span></td>
-        <td class="py-2">
-          <button onclick="deleteStudent('${s.id.replace(/'/g,"\\'")}' )"
-            class="text-red-500 hover:text-red-700 text-xs border border-red-200 px-2 py-1 rounded hover:bg-red-50">
-            <i class="fas fa-trash-alt mr-1"></i>Remove
-          </button>
-        </td>
-      </tr>
-    `;
-  }).join('');
+  emptyEl.style.display='none'; tableEl.style.display='table';
+  var html='';
+  for(var i=0;i<students.length;i++){
+    var s=students[i];
+    var inDates=[];
+    for(var j=0;j<records.length;j++){
+      if(records[j].name.toLowerCase()===s.name.toLowerCase()&&records[j].type==='IN'){
+        inDates.push(records[j].date);
+      }
+    }
+    var days=0;
+    for(var d=0;d<inDates.length;d++){
+      var hasOut=false;
+      for(var j=0;j<records.length;j++){
+        if(records[j].name.toLowerCase()===s.name.toLowerCase()&&records[j].type==='OUT'&&records[j].date===inDates[d]){
+          hasOut=true; break;
+        }
+      }
+      if(hasOut) days++;
+    }
+    var safeId=s.id.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    html+='<tr class="border-b hover:bg-gray-50">'+
+      '<td class="py-2 text-gray-400 text-xs">'+(i+1)+'</td>'+
+      '<td class="py-2 font-medium">'+eh(s.name)+'</td>'+
+      '<td class="py-2 text-gray-500">'+eh(s.id)+'</td>'+
+      '<td class="py-2 text-gray-500">'+eh(s.dept||'—')+'</td>'+
+      '<td class="py-2"><span class="font-semibold text-green-600">'+days+'</span> <span class="text-gray-400 text-xs">day'+(days!==1?'s':'')+'</span></td>'+
+      '<td class="py-2"><button onclick="deleteStudent(\''+safeId+'\')" '+
+        'class="text-xs text-red-500 border border-red-200 px-2 py-1 rounded hover:bg-red-50">'+
+        '<i class="fas fa-trash-alt mr-1"></i>Remove</button></td>'+
+    '</tr>';
+  }
+  tbody.innerHTML=html;
 }
 
-// ══════════════════════════════════════════════════════════════
-//  REPORTS  (with photo thumbnails)
-// ══════════════════════════════════════════════════════════════
-function renderReports() {
-  const records = getData('attendance');
-  const div = document.getElementById('reportTable');
-
-  if (!records.length) {
-    div.innerHTML = '<p class="text-gray-400 text-center py-8"><i class="fas fa-inbox text-4xl block mb-3"></i>No attendance records yet.</p>';
+/* ─── REPORTS ───────────────────────────────────────────── */
+function renderReports(){
+  var records=getData('attendance');
+  var div=document.getElementById('reportTable');
+  if(!records.length){
+    div.innerHTML='<p class="text-gray-400 text-center py-10"><i class="fas fa-inbox text-4xl block mb-3 opacity-30"></i>No records yet.</p>';
     return;
   }
-
-  const grouped = {};
-  records.forEach(r => {
-    if (!grouped[r.date]) grouped[r.date] = [];
+  var grouped={};
+  for(var i=0;i<records.length;i++){
+    var r=records[i];
+    if(!grouped[r.date]) grouped[r.date]=[];
     grouped[r.date].push(r);
-  });
-
-  div.innerHTML = Object.keys(grouped).sort().reverse().map(date => `
-    <div class="mb-8">
-      <h3 class="font-semibold text-gray-700 mb-2 border-b pb-1 flex items-center gap-2">
-        <i class="fas fa-calendar-day text-blue-400"></i>${date}
-        <span class="text-xs text-gray-400 font-normal">${grouped[date].length} record${grouped[date].length !== 1 ? 's' : ''}</span>
-      </h3>
-      <table class="w-full text-sm">
-        <thead>
-          <tr class="text-xs text-gray-500 bg-gray-50">
-            <th class="text-left py-2 px-2 rounded-l">Photo</th>
-            <th class="text-left py-2 px-2">Name</th>
-            <th class="text-left py-2 px-2">Time</th>
-            <th class="text-left py-2 px-2 rounded-r">Type</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${grouped[date].map(r => `
-            <tr class="border-b hover:bg-gray-50">
-              <td class="py-2 px-2">
-                ${r.image
-                  ? `<img src="${r.image}" class="thumb-img" onclick="openImgModal('${r.image}')" title="Click to enlarge">`
-                  : `<span class="text-xs text-gray-300 italic">—</span>`}
-              </td>
-              <td class="py-2 px-2 font-medium">${escHtml(r.name)}</td>
-              <td class="py-2 px-2 text-gray-500">${r.time}</td>
-              <td class="py-2 px-2">
-                <span class="px-2 py-0.5 rounded-full text-xs font-medium ${
-                  r.type === 'IN' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                }">${r.type}</span>
-              </td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </div>
-  `).join('');
-}
-
-// ══════════════════════════════════════════════════════════════
-//  EXPORT CSV
-// ══════════════════════════════════════════════════════════════
-function exportCSV() {
-  const records = getData('attendance');
-  if (!records.length) { alert('No records to export.'); return; }
-
-  const header = 'Name,Date,Time,Type\n';
-  const rows   = records.map(r => `"${r.name}","${r.date}","${r.time}","${r.type}"`).join('\n');
-  const blob   = new Blob([header + rows], { type: 'text/csv' });
-  const a      = document.createElement('a');
-  a.href     = URL.createObjectURL(blob);
-  a.download = 'attendance_' + new Date().toLocaleDateString('en-IN').replace(/\//g, '-') + '.csv';
-  a.click();
-}
-
-// ══════════════════════════════════════════════════════════════
-//  UTILITIES
-// ══════════════════════════════════════════════════════════════
-function escHtml(str) {
-  if (!str) return '';
-  return String(str)
-    .replace(/&/g,'&amp;')
-    .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;');
-}
-
-function showToast(msg) {
-  let toast = document.getElementById('toast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.id = 'toast';
-    toast.style.cssText = `
-      position:fixed;bottom:24px;right:24px;z-index:9999;
-      background:#1e3a5f;color:white;padding:12px 20px;
-      border-radius:10px;font-size:14px;
-      box-shadow:0 4px 16px rgba(0,0,0,0.2);
-      transition:opacity .3s;
-    `;
-    document.body.appendChild(toast);
   }
-  toast.textContent = msg;
-  toast.style.opacity = '1';
-  clearTimeout(toast._t);
-  toast._t = setTimeout(() => toast.style.opacity = '0', 2500);
+  var dates=Object.keys(grouped).sort().reverse();
+  var out='';
+  for(var d=0;d<dates.length;d++){
+    var date=dates[d];
+    var dayRec=grouped[date];
+    var nm={};
+    for(var i=0;i<dayRec.length;i++){
+      var k=dayRec[i].name.toLowerCase();
+      if(!nm[k]) nm[k]={hasIn:false,hasOut:false};
+      if(dayRec[i].type==='IN') nm[k].hasIn=true;
+      if(dayRec[i].type==='OUT') nm[k].hasOut=true;
+    }
+    var complete=0,incomplete=0;
+    var nmVals=Object.values(nm);
+    for(var i=0;i<nmVals.length;i++){
+      if(nmVals[i].hasIn&&nmVals[i].hasOut) complete++;
+      else incomplete++;
+    }
+    var rows='';
+    for(var i=0;i<dayRec.length;i++){
+      var r=dayRec[i];
+      var s=nm[r.name.toLowerCase()];
+      var badge=(s.hasIn&&s.hasOut)
+        ?'<span class="sb sdone">Present</span>'
+        :(r.type==='IN'
+          ?'<span class="sb swarn">Exit missing</span>'
+          :'<span class="sb swarn">Entry missing</span>');
+      var photo=r.image
+        ?'<img src="'+r.image+'" class="timg" onclick="openModal(this.src)" title="Enlarge">'
+        :'<span class="text-xs text-gray-300">—</span>';
+      rows+='<tr class="border-b hover:bg-gray-50">'+
+        '<td class="py-2 pr-3">'+photo+'</td>'+
+        '<td class="py-2 font-medium">'+eh(r.name)+'</td>'+
+        '<td class="py-2 text-gray-500 text-xs">'+r.time+'</td>'+
+        '<td class="py-2"><span class="sb '+(r.type==='IN'?'sin':'sout')+'">'+(r.type==='IN'?'Entry':'Exit')+'</span></td>'+
+        '<td class="py-2">'+badge+'</td>'+
+      '</tr>';
+    }
+    out+='<div class="mb-8">'+
+      '<div class="flex items-center gap-3 border-b pb-2 mb-3">'+
+        '<h3 class="font-semibold text-gray-700"><i class="fas fa-calendar-day text-blue-400 mr-2"></i>'+date+'</h3>'+
+        '<span class="text-xs text-green-600 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">'+complete+' Present</span>'+
+        (incomplete?'<span class="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">'+incomplete+' Incomplete</span>':'')+
+      '</div>'+
+      '<table class="w-full text-sm"><thead><tr class="text-xs text-gray-400">'+
+        '<th class="text-left py-1 pr-3">Photo</th>'+
+        '<th class="text-left py-1">Name</th>'+
+        '<th class="text-left py-1">Time</th>'+
+        '<th class="text-left py-1">Type</th>'+
+        '<th class="text-left py-1">Status</th>'+
+      '</tr></thead><tbody>'+rows+'</tbody></table></div>';
+  }
+  div.innerHTML=out;
 }
 
-// ══════════════════════════════════════════════════════════════
-//  INIT
-// ══════════════════════════════════════════════════════════════
-window.onload = () => {
+/* ─── CSV ───────────────────────────────────────────────── */
+function exportCSV(){
+  var records=getData('attendance');
+  if(!records.length){ showToast('No records to export.','warn'); return; }
+  var dm={};
+  for(var i=0;i<records.length;i++){
+    var r=records[i];
+    var k=r.date+'||'+r.name.toLowerCase();
+    if(!dm[k]) dm[k]={hasIn:false,hasOut:false};
+    if(r.type==='IN') dm[k].hasIn=true;
+    if(r.type==='OUT') dm[k].hasOut=true;
+  }
+  var lines=['Name,Date,Time,Type,Status'];
+  for(var i=0;i<records.length;i++){
+    var r=records[i];
+    var k=r.date+'||'+r.name.toLowerCase();
+    var status=(dm[k].hasIn&&dm[k].hasOut)?'Present':'Incomplete';
+    lines.push('"'+r.name+'","'+r.date+'","'+r.time+'","'+r.type+'","'+status+'"');
+  }
+  var blob=new Blob([lines.join('\n')],{type:'text/csv'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='attendance_'+new Date().toLocaleDateString('en-IN').replace(/\//g,'-')+'.csv';
+  a.click();
+  showToast('CSV downloaded!','success');
+}
+
+/* ─── UTILS ─────────────────────────────────────────────── */
+function eh(s){
+  if(s==null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function showToast(msg,type){
+  var el=document.getElementById('toast');
+  el.textContent=msg;
+  el.style.background=type==='warn'?'#92400e':type==='success'?'#065f46':'#1e3a5f';
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t=setTimeout(function(){ el.classList.remove('show'); },3500);
+}
+
+/* ─── INIT ──────────────────────────────────────────────── */
+window.addEventListener('DOMContentLoaded',function(){
   renderAttendanceTable();
   renderStudentTable();
   updateStats();
-};
+});
 </script>
 </body>
 </html>
